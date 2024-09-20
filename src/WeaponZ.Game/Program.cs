@@ -12,11 +12,11 @@ public class Program
     private GraphicsDevice? _graphicsDevice;
     private CommandList? _commandList;
 
-    private DeviceBuffer _vertexBuffer;
+    private DeviceBuffer? _vertexBuffer;
 
-    private Pipeline _pipeline;
+    private Pipeline? _pipeline;
 
-    private Vertex[] _vertices;
+    private Vertex[]? _vertices;
 
     const string VertexShaderSource = @"#version 460 core
 
@@ -122,6 +122,11 @@ public class Program
 
     public void Draw(GraphicsDevice graphicsDevice)
     {
+        if (_commandList is null)
+        {
+            return;
+        }
+
         _commandList.Begin();
 
         _commandList.SetFramebuffer(graphicsDevice.SwapchainFramebuffer);
