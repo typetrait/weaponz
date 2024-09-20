@@ -16,6 +16,8 @@ public class Program
 
     private Pipeline _pipeline;
 
+    private Vertex[] _vertices;
+
     const string VertexShaderSource = @"#version 460 core
 
     layout (location = 0) in vec3 Position;
@@ -101,17 +103,15 @@ public class Program
 
         _commandList = factory.CreateCommandList();
 
-        var vertices = new Vertex[]
-        {
+        _vertices =
+        [
             new(new Vector3(-0.5f, -0.5f, 0.0f)),
             new(new Vector3(0.5f, -0.5f, 0.0f)),
             new(new Vector3(0.0f, 0.5f, 0.0f))
-        };
+        ];
 
         BufferDescription vertexBufferDescription = new(36, BufferUsage.VertexBuffer);
         _vertexBuffer = factory.CreateBuffer(vertexBufferDescription);
-
-        _commandList.UpdateBuffer(_vertexBuffer, 0, vertices);
 
         while (window.Exists)
         {
@@ -126,12 +126,13 @@ public class Program
 
         _commandList.SetFramebuffer(graphicsDevice.SwapchainFramebuffer);
 
+        _commandList.ClearColorTarget(0, RgbaFloat.CornflowerBlue);
+
         _commandList.SetVertexBuffer(0, _vertexBuffer);
-        
+        _commandList.UpdateBuffer(_vertexBuffer, 0, _vertices);
+
         _commandList.SetPipeline(_pipeline);
         _commandList.Draw(3);
-
-        _commandList.ClearColorTarget(0, RgbaFloat.CornflowerBlue);
 
         _commandList.End();
         graphicsDevice.SubmitCommands(_commandList);
