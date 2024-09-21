@@ -4,6 +4,9 @@ namespace WeaponZ.Game;
 
 public class OrthographicCamera
 {
+    public float BaseSpeed { get; set; } = 0.0005f;
+    public float SpeedModifier { get; set; } = 2.2f;
+
     public float ZNear { get; private set; }
     public float ZFar { get; private set; }
     public Vector3 Position { get; private set; }
@@ -37,7 +40,45 @@ public class OrthographicCamera
         Up = Vector3.Cross(Forward, Right);
     }
 
-    public void Update(float dt) { }
+    public void Update(Keyboard keyboard, float dt)
+    {
+        Vector3 translation = Vector3.Zero;
+        float speed = BaseSpeed;
+
+        if (keyboard.IsKeyDown(Veldrid.Key.ShiftLeft))
+        {
+            speed *= SpeedModifier;
+        }
+
+        if (keyboard.IsKeyDown(Veldrid.Key.W))
+        {
+            translation += (Vector3.UnitZ * Forward) * speed;
+        }
+
+        if (keyboard.IsKeyDown(Veldrid.Key.A))
+        {
+            translation += (Vector3.UnitX * Right) * speed;
+        }
+
+        if (keyboard.IsKeyDown(Veldrid.Key.S))
+        {
+            translation += (-Vector3.UnitZ * Forward) * speed;
+        }
+
+        if (keyboard.IsKeyDown(Veldrid.Key.D))
+        {
+            translation += (-Vector3.UnitX * Right) * speed;
+        }
+
+        Position += translation;
+        UpdateViewMatrix();
+    }
+
+    private void UpdateViewMatrix()
+    {
+        View = Matrix4x4.CreateLookAt(Position, Position + Forward, Up);
+        ViewProjection = new ViewProjectionMatrix(View, Projection);
+    }
 }
 
 public struct ViewProjectionMatrix(Matrix4x4 view, Matrix4x4 projection)

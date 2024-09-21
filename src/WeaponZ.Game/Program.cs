@@ -27,6 +27,8 @@ public class Program
 
     private OrthographicCamera? _orthographicCamera;
 
+    private Keyboard? _keyboard;
+
     public static void Main(string[] args) => new Program().Run(args);
 
     public void Run(string[] args)
@@ -72,11 +74,13 @@ public class Program
             Encoding.UTF8.GetBytes(VertexShaderSource),
             "main"
         );
+
         var fragmentShaderDescription = new ShaderDescription(
             ShaderStages.Fragment,
             Encoding.UTF8.GetBytes(FragmentShaderSource),
             "main"
         );
+
         var shaders = factory.CreateFromSpirv(vertexShaderDescription, fragmentShaderDescription);
 
         VertexLayoutDescription[] vld =
@@ -184,9 +188,13 @@ public class Program
         Console.WriteLine("View:");
         LogMatrix4x4(_orthographicCamera.View);
 
+        _keyboard = new Keyboard();
+
         while (window.Exists)
         {
-            window.PumpEvents();
+            InputSnapshot inputSnapshot = window.PumpEvents();
+            _keyboard.UpdateFromSnapshot(inputSnapshot);
+
             Draw(_graphicsDevice);
         }
     }
@@ -224,6 +232,8 @@ public class Program
 
         _commandList.Draw(3);
         _commandList.End();
+
+        _orthographicCamera.Update(_keyboard, 0.0f);
 
         graphicsDevice.SubmitCommands(_commandList);
         graphicsDevice.SwapBuffers();
