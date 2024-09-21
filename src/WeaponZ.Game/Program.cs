@@ -54,6 +54,11 @@ public class Program
         _vertexCount = models.Bunny.GetVertexCount();
         _indexCount = models.Bunny.GetIndexCount();
 
+        _vertices = models.Cube.GetVertices();
+        _indices = models.Cube.GetIndices();
+        _vertexCount = models.Cube.GetVertexCount();
+        _indexCount = models.Cube.GetIndexCount();
+
         WindowCreateInfo windowCI =
             new()
             {
@@ -134,7 +139,7 @@ public class Program
         );
 
         pipelineDescription.RasterizerState = new RasterizerStateDescription(
-            cullMode: FaceCullMode.None,
+            cullMode: FaceCullMode.Back,
             fillMode: PolygonFillMode.Solid,
             frontFace: FrontFace.Clockwise,
             depthClipEnabled: true,
@@ -246,7 +251,7 @@ public class Program
 
         var model =
             Matrix4x4.CreateTranslation(new Vector3(0.0f, 0.0f, 0.0f))
-            * Matrix4x4.CreateScale(0.01f);
+            * Matrix4x4.CreateScale(1.01f);
 
         _commandList.UpdateBuffer(_modelUniformBuffer, 0, model);
 

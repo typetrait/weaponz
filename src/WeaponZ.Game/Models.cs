@@ -13,12 +13,15 @@ public class SampleModels
 
         Triangle = PrimitiveModelFactory.CreateTriangle();
 
+        Cube = PrimitiveModelFactory.CreateCube();
+
         Bunny =
             _modelLoader.Load("./src/WeaponZ.Game/Assets/fbx/Bunny.fbx")
             ?? throw new InvalidOperationException("Failed to load model");
     }
 
     public IModel Triangle { get; }
+    public IModel Cube { get; }
     public IModel Bunny { get; }
 }
 
@@ -68,6 +71,72 @@ public static class PrimitiveModelFactory
         };
 
         return triangle;
+    }
+
+    public static IModel CreateCube()
+    {
+        var cube = new LocalModel
+        {
+            Vertices =
+            [
+                new(new Vector3(-0.5f, -0.5f, -0.5f), new Vector3(0.0f, 0.0f, -1.0f)),
+                new(new Vector3(0.5f, -0.5f, -0.5f), new Vector3(0.0f, 0.0f, -1.0f)),
+                new(new Vector3(0.5f, 0.5f, -0.5f), new Vector3(0.0f, 0.0f, -1.0f)),
+                new(new Vector3(-0.5f, 0.5f, -0.5f), new Vector3(0.0f, 0.0f, -1.0f)),
+                new(new Vector3(-0.5f, -0.5f, 0.5f), new Vector3(0.0f, 0.0f, 1.0f)),
+                new(new Vector3(0.5f, -0.5f, 0.5f), new Vector3(0.0f, 0.0f, 1.0f)),
+                new(new Vector3(0.5f, 0.5f, 0.5f), new Vector3(0.0f, 0.0f, 1.0f)),
+                new(new Vector3(-0.5f, 0.5f, 0.5f), new Vector3(0.0f, 0.0f, 1.0f))
+            ],
+
+            Indices =
+            [
+                // Front face
+                0,
+                1,
+                2,
+                0,
+                2,
+                3,
+                // Back face
+                4,
+                6,
+                5,
+                4,
+                7,
+                6,
+                // Left face
+                4,
+                5,
+                1,
+                4,
+                1,
+                0,
+                // Right face
+                1,
+                5,
+                6,
+                1,
+                6,
+                2,
+                // Bottom face
+                0,
+                3,
+                7,
+                0,
+                7,
+                4,
+                // Top face
+                3,
+                2,
+                6,
+                3,
+                6,
+                7
+            ]
+        };
+
+        return cube;
     }
 }
 
