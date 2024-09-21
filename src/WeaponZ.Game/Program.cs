@@ -15,6 +15,12 @@ public class Program
     private Pipeline? _pipeline;
 
     private DeviceBuffer? _vertexBuffer;
+    private DeviceBuffer? _indexBuffer;
+    private uint _vertexCount;
+    private uint _indexCount;
+
+    private Vertex[]? _vertices;
+    private uint[]? _indices;
 
     private DeviceBuffer? _projectionUniformBuffer;
     private DeviceBuffer? _viewUniformBuffer;
@@ -23,8 +29,6 @@ public class Program
     private DeviceBuffer? _lightingUniformBuffer;
 
     private ResourceSet? _resourceSet;
-
-    private Vertex[]? _vertices;
 
     private OrthographicCamera? _orthographicCamera;
 
@@ -36,6 +40,19 @@ public class Program
     public void Run(string[] args)
     {
         Console.WriteLine("Hello, WeaponZ!");
+        Console.WriteLine("Current directory: " + Directory.GetCurrentDirectory());
+
+        var models = new SampleModels();
+
+        _vertices = models.Triangle.GetVertices();
+        _indices = models.Triangle.GetIndices();
+        _vertexCount = models.Triangle.GetVertexCount();
+        _indexCount = models.Triangle.GetIndexCount();
+
+        _vertices = models.Bunny.GetVertices();
+        _indices = models.Bunny.GetIndices();
+        _vertexCount = models.Bunny.GetVertexCount();
+        _indexCount = models.Bunny.GetIndexCount();
 
         WindowCreateInfo windowCI =
             new()
@@ -69,7 +86,8 @@ public class Program
         );
 
         _lightingUniformBuffer = factory.CreateBuffer(
-            new(32, BufferUsage.UniformBuffer | BufferUsage.Dynamic));
+            new(32, BufferUsage.UniformBuffer | BufferUsage.Dynamic)
+        );
 
         var vertexShaderDescription = new ShaderDescription(
             ShaderStages.Vertex,
@@ -148,7 +166,7 @@ public class Program
             )
         );
 
-        pipelineDescription.PrimitiveTopology = PrimitiveTopology.TriangleStrip;
+        pipelineDescription.PrimitiveTopology = PrimitiveTopology.TriangleList;
 
         pipelineDescription.ResourceLayouts = [resourcesLayout];
 
@@ -156,14 +174,15 @@ public class Program
 
         _pipeline = factory.CreateGraphicsPipeline(pipelineDescription);
 
-        _vertices =
-        [
-            new(new Vector3(-0.5f, -0.5f, 0.0f), new Vector3(0.0f, 0.0f, 1.0f)),
-            new(new Vector3(0.5f, -0.5f, 0.0f), new Vector3(0.0f, 0.0f, 1.0f)),
-            new(new Vector3(0.0f, 0.5f, 0.0f), new Vector3(0.0f, 0.0f, 1.0f))
-        ];
+        _vertexBuffer = factory.CreateBuffer(
+            new(_vertexCount * Vertex.SizeInBytes, BufferUsage.VertexBuffer)
+        );
 
-        _vertexBuffer = factory.CreateBuffer(new(36 * 2, BufferUsage.VertexBuffer));
+        _indexBuffer = factory.CreateBuffer(
+            new BufferDescription(_indexCount * sizeof(uint), BufferUsage.IndexBuffer)
+        );
+
+        _graphicsDevice.UpdateBuffer(_indexBuffer, 0, _indices);
 
         _resourceSet = factory.CreateResourceSet(
             new ResourceSetDescription(
@@ -225,16 +244,23 @@ public class Program
         _commandList.UpdateBuffer(_projectionUniformBuffer, 0, _orthographicCamera.Projection);
         _commandList.UpdateBuffer(_viewUniformBuffer, 0, _orthographicCamera.View);
 
-        var model = Matrix4x4.CreateTranslation(new Vector3(0.0f, 0.0f, 0.0f));
+        var model =
+            Matrix4x4.CreateTranslation(new Vector3(0.0f, 0.0f, 0.0f))
+            * Matrix4x4.CreateScale(0.01f);
+
         _commandList.UpdateBuffer(_modelUniformBuffer, 0, model);
 
-        var lightingBuffer = new LightingBuffer(new Vector4(_orthographicCamera.Position, 1.0f), new Vector4(0.0f, 0.0f, 0.1f, 1.0f));
+        var lightingBuffer = new LightingBuffer(
+            new Vector4(_orthographicCamera.Position, 1.0f),
+            new Vector4(0.0f, 0.0f, 3.0f, 1.0f)
+        );
         _commandList.UpdateBuffer(_lightingUniformBuffer, 0, lightingBuffer);
 
         _commandList.SetVertexBuffer(0, _vertexBuffer);
         _commandList.UpdateBuffer(_vertexBuffer, 0, _vertices);
 
-        _commandList.Draw(3);
+        _commandList.SetIndexBuffer(_indexBuffer, IndexFormat.UInt32);
+        _commandList.DrawIndexed(_indexCount);
         _commandList.End();
 
         _orthographicCamera.Update(_keyboard, _mouse, 0.0f);
@@ -329,6 +355,11 @@ public struct Vertex(Vector3 position, Vector3 normal)
 {
     public Vector3 Position = position;
     public Vector3 Normal = normal;
+
+    // 3 floats for position = 12 bytes
+    // 3 floats for normal = 12 bytes
+    // Total = 24 bytes
+    public const uint SizeInBytes = 24;
 }
 
 public struct LightingBuffer(Vector4 cameraPosition, Vector4 lightPosition)
