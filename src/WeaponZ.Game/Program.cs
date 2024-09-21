@@ -35,6 +35,8 @@ public class Program
     private Keyboard? _keyboard;
     private Mouse? _mouse;
 
+    private float _rotation = 0.0f;
+
     public static void Main(string[] args) => new Program().Run(args);
 
     public void Run(string[] args)
@@ -54,10 +56,10 @@ public class Program
         _vertexCount = models.Bunny.GetVertexCount();
         _indexCount = models.Bunny.GetIndexCount();
 
-        _vertices = models.Cube.GetVertices();
-        _indices = models.Cube.GetIndices();
-        _vertexCount = models.Cube.GetVertexCount();
-        _indexCount = models.Cube.GetIndexCount();
+        //_vertices = models.Cube.GetVertices();
+        //_indices = models.Cube.GetIndices();
+        //_vertexCount = models.Cube.GetVertexCount();
+        //_indexCount = models.Cube.GetIndexCount();
 
         WindowCreateInfo windowCI =
             new()
@@ -71,9 +73,8 @@ public class Program
 
         Sdl2Window window = VeldridStartup.CreateWindow(ref windowCI);
 
-        GraphicsDeviceOptions options =
-            new() { PreferStandardClipSpaceYDirection = true, PreferDepthRangeZeroToOne = true };
 
+        GraphicsDeviceOptions options = new GraphicsDeviceOptions(true, PixelFormat.R32_Float, true);
         _graphicsDevice = VeldridStartup.CreateGraphicsDevice(window, options);
 
         ResourceFactory factory = _graphicsDevice.ResourceFactory;
@@ -132,16 +133,12 @@ public class Program
 
         pipelineDescription.BlendState = BlendStateDescription.SingleOverrideBlend;
 
-        pipelineDescription.DepthStencilState = new DepthStencilStateDescription(
-            depthTestEnabled: true,
-            depthWriteEnabled: true,
-            comparisonKind: ComparisonKind.LessEqual
-        );
+        pipelineDescription.DepthStencilState = DepthStencilStateDescription.DepthOnlyLessEqual;
 
         pipelineDescription.RasterizerState = new RasterizerStateDescription(
             cullMode: FaceCullMode.Back,
             fillMode: PolygonFillMode.Solid,
-            frontFace: FrontFace.Clockwise,
+            frontFace: FrontFace.CounterClockwise,
             depthClipEnabled: true,
             scissorTestEnabled: false
         );
@@ -242,6 +239,7 @@ public class Program
         _commandList.Begin();
         _commandList.SetFramebuffer(graphicsDevice.SwapchainFramebuffer);
         _commandList.ClearColorTarget(0, RgbaFloat.CornflowerBlue);
+        _commandList.ClearDepthStencil(1.0f);
 
         _commandList.SetPipeline(_pipeline);
         _commandList.SetGraphicsResourceSet(0, _resourceSet);
@@ -249,9 +247,11 @@ public class Program
         _commandList.UpdateBuffer(_projectionUniformBuffer, 0, _orthographicCamera.Projection);
         _commandList.UpdateBuffer(_viewUniformBuffer, 0, _orthographicCamera.View);
 
-        var model =
-            Matrix4x4.CreateTranslation(new Vector3(0.0f, 0.0f, 0.0f))
-            * Matrix4x4.CreateScale(1.01f);
+        _rotation += 0.0002f;
+
+        var model = Matrix4x4.CreateFromYawPitchRoll(_rotation, _rotation, 0.0f)
+            * Matrix4x4.CreateTranslation(new Vector3(0.0f, 0.0f, 0.0f))
+            * Matrix4x4.CreateScale(0.002f);
 
         _commandList.UpdateBuffer(_modelUniformBuffer, 0, model);
 

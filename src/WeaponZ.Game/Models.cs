@@ -16,7 +16,7 @@ public class SampleModels
         Cube = PrimitiveModelFactory.CreateCube();
 
         Bunny =
-            _modelLoader.Load("./src/WeaponZ.Game/Assets/fbx/Bunny.fbx")
+            _modelLoader.Load("./Assets/fbx/Bunny.fbx")
             ?? throw new InvalidOperationException("Failed to load model");
     }
 
@@ -75,18 +75,114 @@ public static class PrimitiveModelFactory
 
     public static IModel CreateCube()
     {
+        var size = 1;
+
         var cube = new LocalModel
         {
             Vertices =
             [
-                new(new Vector3(-0.5f, -0.5f, -0.5f), new Vector3(0.0f, 0.0f, -1.0f)),
-                new(new Vector3(0.5f, -0.5f, -0.5f), new Vector3(0.0f, 0.0f, -1.0f)),
-                new(new Vector3(0.5f, 0.5f, -0.5f), new Vector3(0.0f, 0.0f, -1.0f)),
-                new(new Vector3(-0.5f, 0.5f, -0.5f), new Vector3(0.0f, 0.0f, -1.0f)),
-                new(new Vector3(-0.5f, -0.5f, 0.5f), new Vector3(0.0f, 0.0f, 1.0f)),
-                new(new Vector3(0.5f, -0.5f, 0.5f), new Vector3(0.0f, 0.0f, 1.0f)),
-                new(new Vector3(0.5f, 0.5f, 0.5f), new Vector3(0.0f, 0.0f, 1.0f)),
-                new(new Vector3(-0.5f, 0.5f, 0.5f), new Vector3(0.0f, 0.0f, 1.0f))
+                // Front face
+                new(
+                    new Vector3(-size / 2.0f, -size / 2.0f, size / 2.0f),
+                    new Vector3(0.0f, 0.0f, 1.0f)
+                ),
+                new(
+                    new Vector3(size / 2.0f, -size / 2.0f, size / 2.0f),
+                    new Vector3(0.0f, 0.0f, 1.0f)
+                ),
+                new(
+                    new Vector3(size / 2.0f, size / 2.0f, size / 2.0f),
+                    new Vector3(0.0f, 0.0f, 1.0f)
+                ),
+                new(
+                    new Vector3(-size / 2.0f, size / 2.0f, size / 2.0f),
+                    new Vector3(0.0f, 0.0f, 1.0f)
+                ),
+                // Back face
+                new(
+                    new Vector3(-size / 2.0f, -size / 2.0f, -size / 2.0f),
+                    new Vector3(0.0f, 0.0f, -1.0f)
+                ),
+                new(
+                    new Vector3(size / 2.0f, -size / 2.0f, -size / 2.0f),
+                    new Vector3(0.0f, 0.0f, -1.0f)
+                ),
+                new(
+                    new Vector3(size / 2.0f, size / 2.0f, -size / 2.0f),
+                    new Vector3(0.0f, 0.0f, -1.0f)
+                ),
+                new(
+                    new Vector3(-size / 2.0f, size / 2.0f, -size / 2.0f),
+                    new Vector3(0.0f, 0.0f, -1.0f)
+                ),
+                // Top face
+                new(
+                    new Vector3(-size / 2.0f, size / 2.0f, size / 2.0f),
+                    new Vector3(0.0f, 1.0f, 0.0f)
+                ),
+                new(
+                    new Vector3(size / 2.0f, size / 2.0f, size / 2.0f),
+                    new Vector3(0.0f, 1.0f, 0.0f)
+                ),
+                new(
+                    new Vector3(size / 2.0f, size / 2.0f, -size / 2.0f),
+                    new Vector3(0.0f, 1.0f, 0.0f)
+                ),
+                new(
+                    new Vector3(-size / 2.0f, size / 2.0f, -size / 2.0f),
+                    new Vector3(0.0f, 1.0f, 0.0f)
+                ),
+                // Bottom face
+                new(
+                    new Vector3(-size / 2.0f, -size / 2.0f, size / 2.0f),
+                    new Vector3(0.0f, -1.0f, 0.0f)
+                ),
+                new(
+                    new Vector3(size / 2.0f, -size / 2.0f, size / 2.0f),
+                    new Vector3(0.0f, -1.0f, 0.0f)
+                ),
+                new(
+                    new Vector3(size / 2.0f, -size / 2.0f, -size / 2.0f),
+                    new Vector3(0.0f, -1.0f, 0.0f)
+                ),
+                new(
+                    new Vector3(-size / 2.0f, -size / 2.0f, -size / 2.0f),
+                    new Vector3(0.0f, -1.0f, 0.0f)
+                ),
+                // Right face
+                new(
+                    new Vector3(size / 2.0f, -size / 2.0f, size / 2.0f),
+                    new Vector3(1.0f, 0.0f, 0.0f)
+                ),
+                new(
+                    new Vector3(size / 2.0f, -size / 2.0f, -size / 2.0f),
+                    new Vector3(1.0f, 0.0f, 0.0f)
+                ),
+                new(
+                    new Vector3(size / 2.0f, size / 2.0f, -size / 2.0f),
+                    new Vector3(1.0f, 0.0f, 0.0f)
+                ),
+                new(
+                    new Vector3(size / 2.0f, size / 2.0f, size / 2.0f),
+                    new Vector3(1.0f, 0.0f, 0.0f)
+                ),
+                // Left face
+                new(
+                    new Vector3(-size / 2.0f, -size / 2.0f, -size / 2.0f),
+                    new Vector3(-1.0f, 0.0f, 0.0f)
+                ),
+                new(
+                    new Vector3(-size / 2.0f, -size / 2.0f, size / 2.0f),
+                    new Vector3(-1.0f, 0.0f, 0.0f)
+                ),
+                new(
+                    new Vector3(-size / 2.0f, size / 2.0f, size / 2.0f),
+                    new Vector3(-1.0f, 0.0f, 0.0f)
+                ),
+                new(
+                    new Vector3(-size / 2.0f, size / 2.0f, -size / 2.0f),
+                    new Vector3(-1.0f, 0.0f, 0.0f)
+                )
             ],
 
             Indices =
@@ -95,44 +191,44 @@ public static class PrimitiveModelFactory
                 0,
                 1,
                 2,
-                0,
                 2,
                 3,
+                0,
                 // Back face
                 4,
-                6,
-                5,
-                4,
-                7,
-                6,
-                // Left face
-                4,
-                5,
-                1,
-                4,
-                1,
-                0,
-                // Right face
-                1,
                 5,
                 6,
-                1,
                 6,
-                2,
-                // Bottom face
-                0,
-                3,
-                7,
-                0,
                 7,
                 4,
                 // Top face
-                3,
-                2,
-                6,
-                3,
-                6,
-                7
+                8,
+                9,
+                10,
+                10,
+                11,
+                8,
+                // Bottom face
+                12,
+                13,
+                14,
+                14,
+                15,
+                12,
+                // Right face
+                16,
+                17,
+                18,
+                18,
+                19,
+                16,
+                // Left face
+                20,
+                21,
+                22,
+                22,
+                23,
+                20
             ]
         };
 
