@@ -1,14 +1,14 @@
 ﻿using Veldrid;
 
-namespace WeaponZ.Game;
+namespace WeaponZ.Game.Input;
 
 public class Keyboard
 {
-    private IDictionary<Key, bool> _pressedStates;
+    private readonly Dictionary<Key, bool> _pressedStates;
 
     public Keyboard()
     {
-        _pressedStates = new Dictionary<Key, bool>();
+        _pressedStates = [];
     }
 
     public void UpdateFromSnapshot(InputSnapshot inputSnapshot)
@@ -16,12 +16,13 @@ public class Keyboard
         foreach (var keyEvent in inputSnapshot.KeyEvents)
         {
             Key key = keyEvent.Key;
+            _pressedStates.TryGetValue(key, out var isDown);
 
             if (keyEvent.Down)
             {
                 _pressedStates[key] = true;
             }
-            else if (_pressedStates[key])
+            else if (isDown)
             {
                 _pressedStates[key] = false;
             }

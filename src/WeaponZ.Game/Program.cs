@@ -4,6 +4,7 @@ using Veldrid;
 using Veldrid.Sdl2;
 using Veldrid.SPIRV;
 using Veldrid.StartupUtilities;
+using WeaponZ.Game.Input;
 
 namespace WeaponZ.Game;
 
@@ -28,6 +29,7 @@ public class Program
     private OrthographicCamera? _orthographicCamera;
 
     private Keyboard? _keyboard;
+    private Mouse? _mouse;
 
     public static void Main(string[] args) => new Program().Run(args);
 
@@ -189,11 +191,13 @@ public class Program
         LogMatrix4x4(_orthographicCamera.View);
 
         _keyboard = new Keyboard();
+        _mouse = new Mouse();
 
         while (window.Exists)
         {
             InputSnapshot inputSnapshot = window.PumpEvents();
             _keyboard.UpdateFromSnapshot(inputSnapshot);
+            _mouse.UpdateFromSnapshot(inputSnapshot);
 
             Draw(_graphicsDevice);
         }
@@ -233,7 +237,7 @@ public class Program
         _commandList.Draw(3);
         _commandList.End();
 
-        _orthographicCamera.Update(_keyboard, 0.0f);
+        _orthographicCamera.Update(_keyboard, _mouse, 0.0f);
 
         graphicsDevice.SubmitCommands(_commandList);
         graphicsDevice.SwapBuffers();

@@ -1,4 +1,5 @@
 ﻿using System.Numerics;
+using WeaponZ.Game.Input;
 
 namespace WeaponZ.Game;
 
@@ -14,7 +15,6 @@ public class OrthographicCamera
     public Matrix4x4 Projection { get; private set; }
     public Matrix4x4 View { get; private set; }
 
-    // Used by uniform buffers
     public ViewProjectionMatrix ViewProjection { get; private set; }
 
     public Vector3 Up { get; private set; }
@@ -40,7 +40,7 @@ public class OrthographicCamera
         Up = Vector3.Cross(Forward, Right);
     }
 
-    public void Update(Keyboard keyboard, float dt)
+    public void Update(Keyboard keyboard, Mouse mouse, float dt)
     {
         Vector3 translation = Vector3.Zero;
         float speed = BaseSpeed;
@@ -52,22 +52,27 @@ public class OrthographicCamera
 
         if (keyboard.IsKeyDown(Veldrid.Key.W))
         {
-            translation += (Vector3.UnitZ * Forward) * speed;
+            translation += Forward * speed;
         }
 
         if (keyboard.IsKeyDown(Veldrid.Key.A))
         {
-            translation += (Vector3.UnitX * Right) * speed;
+            translation += Right * speed;
         }
 
         if (keyboard.IsKeyDown(Veldrid.Key.S))
         {
-            translation += (-Vector3.UnitZ * Forward) * speed;
+            translation += -Forward * speed;
         }
 
         if (keyboard.IsKeyDown(Veldrid.Key.D))
         {
-            translation += (-Vector3.UnitX * Right) * speed;
+            translation += -Right * speed;
+        }
+
+        if (mouse.IsButtonDown(Veldrid.MouseButton.Left))
+        {
+            Console.WriteLine($"Mouse clicked at: X = {mouse.X}; Y = {mouse.Y}");
         }
 
         Position += translation;
