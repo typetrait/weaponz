@@ -14,6 +14,8 @@ public class Program
 
     private DeviceBuffer? _vertexBuffer;
 
+    private DeviceBuffer? _viewProjectionUniformBuffer;
+
     private Pipeline? _pipeline;
 
     private Vertex[]? _vertices;
@@ -22,9 +24,16 @@ public class Program
 
     layout (location = 0) in vec3 Position;
 
+    layout (std140, binding = 0) uniform Matrices
+    {
+        mat4 projection; // offset = 0
+        mat4 view; // offset = 64 ((4 * 4) * 4 = 64)
+    };
+
     void main()
     {
-        gl_Position = vec4(Position, 1.0);
+
+        gl_Position = projection * view * vec4(Position, 1.0);
     }";
 
     const string FragmentShaderSource = @"#version 460 core
@@ -35,6 +44,11 @@ public class Program
     {
         fsout_Color = vec3(1.0, 0, 0);
     }";
+
+
+    // literally everything else
+
+    private OrthographicCamera? _orthographicCamera;
 
     public static void Main(string[] args) => new Program().Run(args);
 
@@ -60,6 +74,8 @@ public class Program
         };
 
         _graphicsDevice = VeldridStartup.CreateGraphicsDevice(window, options);
+
+        //_graphicsDevice = VeldridStartup.CreateDefaultOpenGLGraphicsDevice(options, window, GraphicsBackend.OpenGL);
 
         ResourceFactory factory = _graphicsDevice.ResourceFactory;
 
@@ -94,8 +110,13 @@ public class Program
             scissorTestEnabled: false
         );
 
+        ResourceLayout resourcesLayout = factory.CreateResourceLayout(new ResourceLayoutDescription(
+                new ResourceLayoutElementDescription("Matrices", ResourceKind.UniformBuffer, ShaderStages.Vertex)
+            )
+        );
+
         pipelineDescription.PrimitiveTopology = PrimitiveTopology.TriangleStrip;
-        pipelineDescription.ResourceLayouts = [];
+        pipelineDescription.ResourceLayouts = [resourcesLayout];
 
         pipelineDescription.Outputs = _graphicsDevice.SwapchainFramebuffer.OutputDescription;
 
@@ -112,6 +133,18 @@ public class Program
 
         BufferDescription vertexBufferDescription = new(36, BufferUsage.VertexBuffer);
         _vertexBuffer = factory.CreateBuffer(vertexBufferDescription);
+
+        // viewModel
+        BufferDescription viewProjectUniformBufferDescription = new(ViewProjectionMatrix.SizeInBytes, BufferUsage.UniformBuffer | BufferUsage.Dynamic);
+        _viewProjectionUniformBuffer = factory.CreateBuffer(viewProjectUniformBufferDescription);
+
+        _orthographicCamera = new OrthographicCamera(
+            windowCI.WindowWidth,
+            windowCI.WindowHeight,
+            0.1f,
+            100.0f,
+            new Vector3(0.0f, 0.0f, 3.0f)
+        );
 
         while (window.Exists)
         {
@@ -131,10 +164,13 @@ public class Program
 
         _commandList.SetFramebuffer(graphicsDevice.SwapchainFramebuffer);
 
-        _commandList.ClearColorTarget(0, RgbaFloat.CornflowerBlue);
+        _commandList.ClearColorTarget(0, RgbaFloat.Grey);
 
         _commandList.SetVertexBuffer(0, _vertexBuffer);
         _commandList.UpdateBuffer(_vertexBuffer, 0, _vertices);
+
+        if (_orthographicCamera is null) return;
+        _commandList.UpdateBuffer(_viewProjectionUniformBuffer, 0, _orthographicCamera.ViewProjection);
 
         _commandList.SetPipeline(_pipeline);
         _commandList.Draw(3);
