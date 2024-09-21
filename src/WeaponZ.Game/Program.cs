@@ -74,7 +74,7 @@ public class Program
         Sdl2Window window = VeldridStartup.CreateWindow(ref windowCI);
 
 
-        GraphicsDeviceOptions options = new GraphicsDeviceOptions(true, PixelFormat.R32_Float, true);
+        GraphicsDeviceOptions options = new(true, PixelFormat.R32_Float, true);
         _graphicsDevice = VeldridStartup.CreateGraphicsDevice(window, options);
 
         ResourceFactory factory = _graphicsDevice.ResourceFactory;
