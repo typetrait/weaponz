@@ -16,7 +16,7 @@ public class SampleModels
         Cube = PrimitiveModelFactory.CreateCube();
 
         Bunny =
-            _modelLoader.Load("./Assets/fbx/Bunny.fbx")
+            _modelLoader.Load($"{Config.AssetsPath}/fbx/Bunny.fbx")
             ?? throw new InvalidOperationException("Failed to load model");
     }
 
@@ -195,11 +195,11 @@ public static class PrimitiveModelFactory
                 3,
                 0,
                 // Back face
-                4,
                 5,
-                6,
+                4,
                 6,
                 7,
+                6,
                 4,
                 // Top face
                 8,
@@ -209,12 +209,12 @@ public static class PrimitiveModelFactory
                 11,
                 8,
                 // Bottom face
+                15,
+                14,
                 12,
                 13,
-                14,
-                14,
-                15,
                 12,
+                14,
                 // Right face
                 16,
                 17,

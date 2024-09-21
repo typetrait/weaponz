@@ -73,12 +73,12 @@ public class Program
 
         Sdl2Window window = VeldridStartup.CreateWindow(ref windowCI);
 
-
-        GraphicsDeviceOptions options = new(true, PixelFormat.R32_Float, true)
-        {
-            PreferStandardClipSpaceYDirection = true,
-            PreferDepthRangeZeroToOne = true,
-        };
+        GraphicsDeviceOptions options =
+            new(true, PixelFormat.R32_Float, true)
+            {
+                PreferStandardClipSpaceYDirection = true,
+                PreferDepthRangeZeroToOne = true,
+            };
         _graphicsDevice = VeldridStartup.CreateGraphicsDevice(window, options);
 
         //_graphicsDevice = VeldridStartup.CreateDefaultOpenGLGraphicsDevice(options, window, GraphicsBackend.OpenGL);
@@ -238,7 +238,7 @@ public class Program
             return;
         }
 
-        if (_orthographicCamera is null)
+        if (_orthographicCamera is null || _keyboard is null || _mouse is null)
         {
             return;
         }
@@ -256,7 +256,8 @@ public class Program
 
         _rotation += 0.0002f;
 
-        var model = Matrix4x4.CreateFromYawPitchRoll(_rotation, _rotation, _rotation)
+        var model =
+            Matrix4x4.CreateFromYawPitchRoll(_rotation, _rotation, _rotation)
             * Matrix4x4.CreateTranslation(new Vector3(0.0f, 0.0f, 0.0f))
             * Matrix4x4.CreateScale(0.002f);
 
