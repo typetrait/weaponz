@@ -27,7 +27,7 @@ public class OrthographicCamera
         Projection = Matrix4x4.CreatePerspectiveFieldOfView(1.0f, width / height, zNear, zFar);
 
         Up = Vector3.UnitY;
-        Forward = -Vector3.UnitZ; // D3D is Positive, I think?
+        Forward = -Vector3.UnitZ;
 
         View = Matrix4x4.CreateLookAt(position, position + Forward, Up);
 

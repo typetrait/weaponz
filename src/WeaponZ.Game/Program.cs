@@ -17,6 +17,8 @@ public class Program
 
     private DeviceBuffer? _projectionUniformBuffer;
     private DeviceBuffer? _viewUniformBuffer;
+    private DeviceBuffer? _modelUniformBuffer;
+
     private ResourceSet? _resourceSet;
 
     private Vertex[]? _vertices;
@@ -44,18 +46,19 @@ public class Program
         GraphicsDeviceOptions options =
             new() { PreferStandardClipSpaceYDirection = true, PreferDepthRangeZeroToOne = true };
 
-        _graphicsDevice = VeldridStartup.CreateDefaultOpenGLGraphicsDevice(
-            options,
-            window,
-            GraphicsBackend.OpenGL
-        );
+        _graphicsDevice = VeldridStartup.CreateGraphicsDevice(window, options);
 
         ResourceFactory factory = _graphicsDevice.ResourceFactory;
 
         _projectionUniformBuffer = factory.CreateBuffer(
             new(64, BufferUsage.UniformBuffer | BufferUsage.Dynamic)
         );
+
         _viewUniformBuffer = factory.CreateBuffer(
+            new(64, BufferUsage.UniformBuffer | BufferUsage.Dynamic)
+        );
+
+        _modelUniformBuffer = factory.CreateBuffer(
             new(64, BufferUsage.UniformBuffer | BufferUsage.Dynamic)
         );
 
@@ -115,6 +118,11 @@ public class Program
                     "ViewBuffer",
                     ResourceKind.UniformBuffer,
                     ShaderStages.Vertex
+                ),
+                new ResourceLayoutElementDescription(
+                    "ModelBuffer",
+                    ResourceKind.UniformBuffer,
+                    ShaderStages.Vertex
                 )
             )
         );
@@ -140,7 +148,8 @@ public class Program
             new ResourceSetDescription(
                 resourcesLayout,
                 _projectionUniformBuffer,
-                _viewUniformBuffer
+                _viewUniformBuffer,
+                _modelUniformBuffer
             )
         );
 
@@ -184,8 +193,13 @@ public class Program
 
         _commandList.SetPipeline(_pipeline);
         _commandList.SetGraphicsResourceSet(0, _resourceSet);
+
         _commandList.UpdateBuffer(_projectionUniformBuffer, 0, _orthographicCamera.Projection);
         _commandList.UpdateBuffer(_viewUniformBuffer, 0, _orthographicCamera.View);
+
+        var model = Matrix4x4.CreateTranslation(new Vector3(0, 0.45f, 0));
+        _commandList.UpdateBuffer(_modelUniformBuffer, 0, model);
+
         _commandList.SetVertexBuffer(0, _vertexBuffer);
         _commandList.UpdateBuffer(_vertexBuffer, 0, _vertices);
 
@@ -211,9 +225,14 @@ public class Program
                 mat4 View;
             };
 
+            layout (set = 0, binding = 2) uniform ModelBuffer
+            {
+                mat4 Model;
+            };
+
             void main()
             {
-                gl_Position = Projection * View * vec4(Position, 1.0);
+                gl_Position = Projection * View * Model * vec4(Position, 1.0);
             }
         ";
 
