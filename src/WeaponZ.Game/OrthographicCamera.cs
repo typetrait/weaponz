@@ -18,18 +18,13 @@ public class OrthographicCamera
     public Vector3 Forward { get; private set; }
     public Vector3 Right { get; private set; }
 
-    public OrthographicCamera(
-        float width,
-        float height,
-        float zNear,
-        float zFar,
-        Vector3 position)
+    public OrthographicCamera(float width, float height, float zNear, float zFar, Vector3 position)
     {
         ZNear = zNear;
         ZFar = zFar;
         Position = position;
 
-        Projection = Matrix4x4.CreatePerspective(width, height, zNear, zFar);
+        Projection = Matrix4x4.CreatePerspectiveFieldOfView(1.0f, width / height, zNear, zFar);
 
         Up = Vector3.UnitY;
         Forward = -Vector3.UnitZ; // D3D is Positive, I think?
@@ -42,10 +37,7 @@ public class OrthographicCamera
         Up = Vector3.Cross(Forward, Right);
     }
 
-    public void Update(float dt)
-    {
-
-    }
+    public void Update(float dt) { }
 }
 
 public struct ViewProjectionMatrix(Matrix4x4 view, Matrix4x4 projection)
