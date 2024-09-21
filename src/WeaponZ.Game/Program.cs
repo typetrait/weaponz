@@ -19,6 +19,8 @@ public class Program
     private DeviceBuffer? _viewUniformBuffer;
     private DeviceBuffer? _modelUniformBuffer;
 
+    private DeviceBuffer? _lightingUniformBuffer;
+
     private ResourceSet? _resourceSet;
 
     private Vertex[]? _vertices;
@@ -62,6 +64,9 @@ public class Program
             new(64, BufferUsage.UniformBuffer | BufferUsage.Dynamic)
         );
 
+        _lightingUniformBuffer = factory.CreateBuffer(
+            new(32, BufferUsage.UniformBuffer | BufferUsage.Dynamic));
+
         var vertexShaderDescription = new ShaderDescription(
             ShaderStages.Vertex,
             Encoding.UTF8.GetBytes(VertexShaderSource),
@@ -83,6 +88,11 @@ public class Program
                         VertexElementFormat.Float3,
                         VertexElementSemantic.TextureCoordinate
                     ),
+                    new(
+                        "Normal",
+                        VertexElementFormat.Float3,
+                        VertexElementSemantic.TextureCoordinate
+                    )
                 ]
             )
         ];
@@ -123,6 +133,11 @@ public class Program
                     "ModelBuffer",
                     ResourceKind.UniformBuffer,
                     ShaderStages.Vertex
+                ),
+                new ResourceLayoutElementDescription(
+                    "LightingBuffer",
+                    ResourceKind.UniformBuffer,
+                    ShaderStages.Fragment
                 )
             )
         );
@@ -137,19 +152,20 @@ public class Program
 
         _vertices =
         [
-            new(new Vector3(-0.5f, -0.5f, 0.0f)),
-            new(new Vector3(0.5f, -0.5f, 0.0f)),
-            new(new Vector3(0.0f, 0.5f, 0.0f))
+            new(new Vector3(-0.5f, -0.5f, 0.0f), new Vector3(0.0f, 0.0f, 1.0f)),
+            new(new Vector3(0.5f, -0.5f, 0.0f), new Vector3(0.0f, 0.0f, 1.0f)),
+            new(new Vector3(0.0f, 0.5f, 0.0f), new Vector3(0.0f, 0.0f, 1.0f))
         ];
 
-        _vertexBuffer = factory.CreateBuffer(new(36, BufferUsage.VertexBuffer));
+        _vertexBuffer = factory.CreateBuffer(new(36 * 2, BufferUsage.VertexBuffer));
 
         _resourceSet = factory.CreateResourceSet(
             new ResourceSetDescription(
                 resourcesLayout,
                 _projectionUniformBuffer,
                 _viewUniformBuffer,
-                _modelUniformBuffer
+                _modelUniformBuffer,
+                _lightingUniformBuffer
             )
         );
 
@@ -197,8 +213,11 @@ public class Program
         _commandList.UpdateBuffer(_projectionUniformBuffer, 0, _orthographicCamera.Projection);
         _commandList.UpdateBuffer(_viewUniformBuffer, 0, _orthographicCamera.View);
 
-        var model = Matrix4x4.CreateTranslation(new Vector3(0, 0.45f, 0));
+        var model = Matrix4x4.CreateTranslation(new Vector3(0.0f, 0.0f, 0.0f));
         _commandList.UpdateBuffer(_modelUniformBuffer, 0, model);
+
+        var lightingBuffer = new LightingBuffer(new Vector4(_orthographicCamera.Position, 1.0f), new Vector4(0.0f, 0.0f, 0.1f, 1.0f));
+        _commandList.UpdateBuffer(_lightingUniformBuffer, 0, lightingBuffer);
 
         _commandList.SetVertexBuffer(0, _vertexBuffer);
         _commandList.UpdateBuffer(_vertexBuffer, 0, _vertices);
@@ -214,6 +233,10 @@ public class Program
         @"  #version 460 core
 
             layout (location = 0) in vec3 Position;
+            layout (location = 1) in vec3 Normal;
+
+            layout (location = 0) out vec3 fsout_Normal;
+            layout (location = 1) out vec4 fsout_Position;
 
             layout (set = 0, binding = 0) uniform ProjectionBuffer
             {
@@ -232,6 +255,8 @@ public class Program
 
             void main()
             {
+                fsout_Normal = mat3(transpose(inverse(Model))) * Normal;
+                fsout_Position = Model * vec4(Position, 1.0);
                 gl_Position = Projection * View * Model * vec4(Position, 1.0);
             }
         ";
@@ -239,11 +264,41 @@ public class Program
     const string FragmentShaderSource =
         @"  #version 460 core
 
-            layout (location = 0) out vec3 fsout_Color;
+            layout (location = 0) in vec3 fsin_Normal;
+            layout (location = 1) in vec4 fsin_Position;
+
+            layout (location = 0) out vec4 fsout_Color;
+
+            layout (set = 0, binding = 3) uniform LightingBuffer
+            {
+                vec4 CameraPosition;
+                vec4 LightPosition;
+            };
 
             void main()
             {
-                fsout_Color = vec3(1.0, 0, 0);
+                vec3 objectColor = vec3(0.8f, 0.0f, 0.5f);
+
+                vec3 lightColor = vec3(1.0f, 1.0f, 1.0f);
+
+                //vec3 lightDirection = normalize(vec3(0.0f, 0.0f, 0.1f) - fsin_Position.xyz);
+                vec3 lightDirection = normalize(LightPosition.xyz - fsin_Position.xyz);
+                vec3 normal = normalize(fsin_Normal);
+
+                float diffuseIntensity = max(dot(lightDirection, normal), 0.0f);
+                vec3 diffuseColor = lightColor * diffuseIntensity;
+
+                vec3 viewDirection = normalize(CameraPosition.xyz - fsin_Position.xyz);
+                vec3 reflectDirection = reflect(-lightDirection, normal);
+
+                float specularIntensity = pow(max(dot(viewDirection, reflectDirection), 0.0), 128);
+                vec3 specularColor = 0.5f * specularIntensity * lightColor;
+
+                float ambientStrength = 0.1f;
+                vec3 ambientColor = ambientStrength * lightColor;
+
+                vec3 result = (ambientColor + diffuseColor + specularColor) * objectColor;
+                fsout_Color = vec4(result, 1.0);
             }
         ";
 
@@ -256,7 +311,14 @@ public class Program
     }
 }
 
-public struct Vertex(Vector3 position)
+public struct Vertex(Vector3 position, Vector3 normal)
 {
     public Vector3 Position = position;
+    public Vector3 Normal = normal;
+}
+
+public struct LightingBuffer(Vector4 cameraPosition, Vector4 lightPosition)
+{
+    public Vector4 CameraPosition = cameraPosition;
+    public Vector4 LightPosition = lightPosition;
 }
