@@ -5,8 +5,8 @@ namespace WeaponZ.Game;
 
 public class OrthographicCamera
 {
-    public float BaseSpeed { get; set; } = 0.0205f;
-    public float SpeedModifier { get; set; } = 2.2f;
+    public float BaseSpeed { get; set; } = 3.5f;
+    public float SpeedModifier { get; set; } = 2.5f;
 
     public float ZNear { get; private set; }
     public float ZFar { get; private set; }
@@ -40,10 +40,10 @@ public class OrthographicCamera
         Up = Vector3.Cross(Forward, Right);
     }
 
-    public void Update(KeyboardState keyboard, MouseState mouse, float dt)
+    public void Update(KeyboardState keyboard, MouseState mouse, TimeSpan dt)
     {
         Vector3 translation = Vector3.Zero;
-        float speed = BaseSpeed;
+        float speed = BaseSpeed * (float)dt.TotalSeconds;
 
         if (keyboard.IsKeyDown(Veldrid.Key.ShiftLeft))
         {

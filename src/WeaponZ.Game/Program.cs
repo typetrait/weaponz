@@ -1,6 +1,6 @@
-﻿using ImGuiNET;
-using System.Numerics;
+﻿using System.Numerics;
 using System.Text;
+using ImGuiNET;
 using Veldrid;
 using Veldrid.Sdl2;
 using Veldrid.SPIRV;
@@ -69,7 +69,7 @@ public class Program
                 PreferDepthRangeZeroToOne = true,
             };
         _graphicsDevice = VeldridStartup.CreateGraphicsDevice(window, options);
-        
+
         //_graphicsDevice = VeldridStartup.CreateDefaultOpenGLGraphicsDevice(options, window, GraphicsBackend.OpenGL);
         //_graphicsDevice = VeldridStartup.CreateVulkanGraphicsDevice(options, window);
 
@@ -168,15 +168,9 @@ public class Program
         _sceneGraph = new SceneGraphImpl(_rootNode);
 
         // TODO: NOT HERE
-        _transform = new Transform()
-        {
-            Scale = new Vector3(0.002f),
-        };
+        _transform = new Transform() { Scale = new Vector3(0.002f), };
 
-        var transform2 = new Transform()
-        {
-            Scale = new Vector3(0.002f),
-        };
+        var transform2 = new Transform() { Scale = new Vector3(0.002f), };
 
         transform2.TranslateY(0.2f);
 
@@ -190,7 +184,7 @@ public class Program
 
         _sceneGraph.AppendTo(_sceneGraph.Root, _bunnyProp);
         _sceneGraph.AppendTo(_sceneGraph.Root.Children[0], _bunnyProp2);
-        
+
         //_sceneGraph.AppendTo(_sceneGraph.Root, new PawnSceneObject("Prop 2", null, null));
         //_sceneGraph.AppendTo(_sceneGraph.Root.Children[0], new PawnSceneObject("Prop 3", null, null));
         //
@@ -203,14 +197,25 @@ public class Program
 
         _pipeline = factory.CreateGraphicsPipeline(pipelineDescription);
 
-        _imguiRenderer = new ImGuiRenderer(_graphicsDevice, pipelineDescription.Outputs, window.Width, window.Height);
+        _imguiRenderer = new ImGuiRenderer(
+            _graphicsDevice,
+            pipelineDescription.Outputs,
+            window.Width,
+            window.Height
+        );
 
         _vertexBuffer = factory.CreateBuffer(
-            new(_bunnyProp.ModelBuffer.Model.GetVertexCount() * Vertex.SizeInBytes, BufferUsage.VertexBuffer)
+            new(
+                _bunnyProp.ModelBuffer.Model.GetVertexCount() * Vertex.SizeInBytes,
+                BufferUsage.VertexBuffer
+            )
         );
 
         _indexBuffer = factory.CreateBuffer(
-            new BufferDescription(_bunnyProp.ModelBuffer.Model.GetIndexCount() * sizeof(uint), BufferUsage.IndexBuffer)
+            new BufferDescription(
+                _bunnyProp.ModelBuffer.Model.GetIndexCount() * sizeof(uint),
+                BufferUsage.IndexBuffer
+            )
         );
 
         // _graphicsDevice.UpdateBuffer(_indexBuffer, 0, _bunnyProp.ModelBuffer.Model.GetIndices());
@@ -243,21 +248,28 @@ public class Program
         _keyboardState = new KeyboardState();
         _mouseState = new MouseState();
 
+        var frameTimer = new FrameTimer();
+        uint targetFps = 60;
+        TimeSpan deltaTime = TimeSpan.Zero;
+
         while (window.Exists)
         {
             InputSnapshot inputSnapshot = window.PumpEvents();
             _keyboardState.UpdateFromSnapshot(inputSnapshot);
             _mouseState.UpdateFromSnapshot(inputSnapshot);
 
-            _imguiRenderer.Update(1f / 60f, inputSnapshot);
+            _imguiRenderer.Update((float)deltaTime.TotalSeconds, inputSnapshot);
 
-            Draw(_graphicsDevice);
+            Draw(_graphicsDevice, deltaTime);
+
+            frameTimer.SleepUntilTargetFrameTime(targetFps);
+            deltaTime = frameTimer.Restart();
         }
     }
 
     private float _selection = 0;
 
-    public void Draw(GraphicsDevice graphicsDevice)
+    public void Draw(GraphicsDevice graphicsDevice, TimeSpan deltaTime)
     {
         if (_commandList is null)
         {
@@ -269,7 +281,7 @@ public class Program
             return;
         }
 
-        _transform!.RotateY(0.02f);
+        _transform!.RotateY(1.0f * (float)deltaTime.TotalSeconds);
 
         ImGui.Begin("Scene Graph");
         DrawSceneGraph(_sceneGraph.Root);
@@ -331,7 +343,7 @@ public class Program
 
         _commandList.End();
 
-        _orthographicCamera.Update(_keyboardState, _mouseState, 0.0f);
+        _orthographicCamera.Update(_keyboardState, _mouseState, deltaTime);
 
         graphicsDevice.SubmitCommands(_commandList);
         graphicsDevice.SwapBuffers();
@@ -381,10 +393,18 @@ public class Program
             commandList.UpdateBuffer(_modelUniformBuffer, 0, pawn.Transform.Matrix);
 
             commandList.SetVertexBuffer(0, pawn.ModelBuffer.VertexBuffer);
-            commandList.UpdateBuffer(pawn.ModelBuffer.VertexBuffer, 0, pawn.ModelBuffer.Model.GetVertices());
+            commandList.UpdateBuffer(
+                pawn.ModelBuffer.VertexBuffer,
+                0,
+                pawn.ModelBuffer.Model.GetVertices()
+            );
 
             commandList.SetIndexBuffer(pawn.ModelBuffer.IndexBuffer, IndexFormat.UInt32);
-            commandList.UpdateBuffer(pawn.ModelBuffer.IndexBuffer, 0, _bunnyProp.ModelBuffer.Model.GetIndices());
+            commandList.UpdateBuffer(
+                pawn.ModelBuffer.IndexBuffer,
+                0,
+                _bunnyProp.ModelBuffer.Model.GetIndices()
+            );
 
             commandList.DrawIndexed(pawn.ModelBuffer.Model.GetIndexCount());
 
@@ -479,7 +499,7 @@ public class Program
 
 public interface IVertex
 {
-    abstract static uint SizeInBytes { get; }
+    static abstract uint SizeInBytes { get; }
 }
 
 public struct Vertex(Vector3 position, Vector3 normal) : IVertex

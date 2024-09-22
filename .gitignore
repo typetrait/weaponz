@@ -398,3 +398,6 @@ FodyWeavers.xsd
 *.sln.iml
 
 **/[Pp]roperties/*
+
+# Application
+**/imgui.ini
