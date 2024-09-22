@@ -2,11 +2,11 @@
 
 namespace WeaponZ.Game.Input;
 
-public class Keyboard
+public class KeyboardState
 {
     private readonly Dictionary<Key, bool> _pressedStates;
 
-    public Keyboard()
+    public KeyboardState()
     {
         _pressedStates = [];
     }

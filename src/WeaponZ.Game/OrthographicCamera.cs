@@ -40,7 +40,7 @@ public class OrthographicCamera
         Up = Vector3.Cross(Forward, Right);
     }
 
-    public void Update(Keyboard keyboard, Mouse mouse, float dt)
+    public void Update(KeyboardState keyboard, MouseState mouse, float dt)
     {
         Vector3 translation = Vector3.Zero;
         float speed = BaseSpeed;

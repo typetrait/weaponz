@@ -6,6 +6,7 @@ using Veldrid.Sdl2;
 using Veldrid.SPIRV;
 using Veldrid.StartupUtilities;
 using WeaponZ.Game.Input;
+using MouseState = WeaponZ.Game.Input.MouseState;
 
 namespace WeaponZ.Game;
 
@@ -34,8 +35,8 @@ public class Program
 
     private OrthographicCamera? _orthographicCamera;
 
-    private Keyboard? _keyboard;
-    private Mouse? _mouse;
+    private KeyboardState? _keyboardState;
+    private MouseState? _mouseState;
 
     private float _rotation = 0.0f;
 
@@ -224,8 +225,8 @@ public class Program
         Console.WriteLine("View:");
         LogMatrix4x4(_orthographicCamera.View);
 
-        _keyboard = new Keyboard();
-        _mouse = new Mouse();
+        _keyboardState = new KeyboardState();
+        _mouseState = new Input.MouseState();
 
         _transform = new Transform()
         {
@@ -235,8 +236,8 @@ public class Program
         while (window.Exists)
         {
             InputSnapshot inputSnapshot = window.PumpEvents();
-            _keyboard.UpdateFromSnapshot(inputSnapshot);
-            _mouse.UpdateFromSnapshot(inputSnapshot);
+            _keyboardState.UpdateFromSnapshot(inputSnapshot);
+            _mouseState.UpdateFromSnapshot(inputSnapshot);
 
             _imguiRenderer.Update(1f / 60f, inputSnapshot);
 
@@ -253,7 +254,7 @@ public class Program
             return;
         }
 
-        if (_orthographicCamera is null || _keyboard is null || _mouse is null)
+        if (_orthographicCamera is null || _keyboardState is null || _mouseState is null)
         {
             return;
         }
@@ -341,7 +342,7 @@ public class Program
 
         _commandList.End();
 
-        _orthographicCamera.Update(_keyboard, _mouse, 0.0f);
+        _orthographicCamera.Update(_keyboardState, _mouseState, 0.0f);
 
         graphicsDevice.SubmitCommands(_commandList);
         graphicsDevice.SwapBuffers();

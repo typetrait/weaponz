@@ -2,14 +2,14 @@
 
 namespace WeaponZ.Game.Input;
 
-public class Mouse
+public class MouseState
 {
     public float X { get; private set; }
     public float Y { get; private set; }
 
     private readonly Dictionary<MouseButton, bool> _pressedStates;
 
-    public Mouse()
+    public MouseState()
     {
         _pressedStates = [];
     }
