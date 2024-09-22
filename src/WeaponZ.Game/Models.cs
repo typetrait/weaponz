@@ -1,5 +1,6 @@
 using System.Numerics;
 using Assimp;
+using Veldrid;
 
 namespace WeaponZ.Game;
 
@@ -24,10 +25,10 @@ public class SampleModels
             ?? throw new InvalidOperationException("Failed to load model");
     }
 
-    public IModel Triangle { get; }
-    public IModel Cube { get; }
-    public IModel Bunny { get; }
-    public IModel Sponga { get; }
+    public Model Triangle { get; }
+    public Model Cube { get; }
+    public Model Bunny { get; }
+    public Model Sponga { get; }
 }
 
 public class ModelLoader
@@ -39,7 +40,7 @@ public class ModelLoader
         _importer = new AssimpContext();
     }
 
-    public IModel? Load(string filePath)
+    public Model? Load(string filePath)
     {
         var scene = _importer.ImportFile(
             filePath,
@@ -58,7 +59,7 @@ public class ModelLoader
         // Quick workaround
         var temp = new AssimpModel { Scene = scene };
 
-        var model = new LocalModel()
+        var model = new Model()
         {
             Vertices = temp.GetVertices(),
             Indices = temp.GetIndices(),
@@ -70,9 +71,9 @@ public class ModelLoader
 
 public static class PrimitiveModelFactory
 {
-    public static IModel CreateTriangle()
+    public static Model CreateTriangle()
     {
-        var triangle = new LocalModel
+        var triangle = new Model
         {
             Vertices =
             [
@@ -86,11 +87,11 @@ public static class PrimitiveModelFactory
         return triangle;
     }
 
-    public static IModel CreateCube()
+    public static Model CreateCube()
     {
         var size = 1;
 
-        var cube = new LocalModel
+        var cube = new Model
         {
             Vertices =
             [
@@ -249,16 +250,16 @@ public static class PrimitiveModelFactory
     }
 }
 
-public interface IModel
-{
-    Vertex[] GetVertices();
-    uint[] GetIndices();
+//public interface IModel
+//{
+//    Vertex[] GetVertices();
+//    uint[] GetIndices();
 
-    uint GetVertexCount();
-    uint GetIndexCount();
-}
+//    uint GetVertexCount();
+//    uint GetIndexCount();
+//}
 
-public class LocalModel : IModel
+public class Model
 {
     public required Vertex[] Vertices { get; init; }
     public required uint[] Indices { get; init; }
@@ -284,7 +285,30 @@ public class LocalModel : IModel
     }
 }
 
-public class AssimpModel : IModel
+public class ModelBuffer(DeviceBuffer vertexBuffer, DeviceBuffer indexBuffer, DeviceBuffer uniformBuffer, Model model)
+{
+    public readonly DeviceBuffer VertexBuffer = vertexBuffer;
+    public readonly DeviceBuffer IndexBuffer = indexBuffer;
+    public readonly DeviceBuffer UniformBuffer = uniformBuffer;
+    public readonly Model Model = model;
+}
+
+public class ModelBufferFactory(ResourceFactory resourceFactory)
+{
+    public readonly ResourceFactory ResourceFactory = resourceFactory;
+
+    public ModelBuffer CreateModelBuffer<TVertex>(Model model) where TVertex : IVertex
+    {
+        var vb = ResourceFactory.CreateBuffer(new BufferDescription(TVertex.SizeInBytes * model.GetVertexCount(), BufferUsage.VertexBuffer));
+        var ib = ResourceFactory.CreateBuffer(new BufferDescription(model.GetIndexCount() * sizeof(uint), BufferUsage.IndexBuffer));
+        var ub = ResourceFactory.CreateBuffer(new BufferDescription(64, BufferUsage.UniformBuffer | BufferUsage.Dynamic)); // extract const
+
+        var mb = new ModelBuffer(vb, ib, ub, model);
+        return mb;
+    }
+}
+
+public class AssimpModel
 {
     public required Scene Scene { get; init; }
 

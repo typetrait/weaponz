@@ -8,15 +8,15 @@ public class PawnSceneObject : ISceneObject
 
     public IList<ISceneObject> Children { get; }
 
-    public IModel Model { get; }
+    public ModelBuffer ModelBuffer { get; }
 
     public SceneObjectKind Kind => SceneObjectKind.Pawn;
 
-    public PawnSceneObject(string displayName, Transform transform, IModel model)
+    public PawnSceneObject(string displayName, Transform transform, ModelBuffer modelBuffer)
     {
         DisplayName = displayName;
         Transform = transform;
-        Model = model;
+        ModelBuffer = modelBuffer;
 
         Children = [];
     }

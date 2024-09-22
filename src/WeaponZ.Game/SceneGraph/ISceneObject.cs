@@ -14,6 +14,7 @@ public interface ISceneObject
 public enum SceneObjectKind
 {
     Pawn,
+    Group,
     Light,
     Camera
 }

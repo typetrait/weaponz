@@ -41,6 +41,7 @@ public class Program
     private SceneGraphImpl _sceneGraph;
 
     private PawnSceneObject _bunnyProp;
+    private PawnSceneObject _bunnyProp2;
 
     public static void Main(string[] args) => new Program().Run(args);
 
@@ -163,23 +164,35 @@ public class Program
             )
         );
 
+        var _rootNode = new GroupSceneObject("Root");
+        _sceneGraph = new SceneGraphImpl(_rootNode);
+
         // TODO: NOT HERE
         _transform = new Transform()
         {
             Scale = new Vector3(0.002f),
         };
 
+        var transform2 = new Transform()
+        {
+            Scale = new Vector3(0.002f),
+        };
+
+        transform2.TranslateY(0.2f);
+
         var models = new SampleModels();
-        _bunnyProp = new PawnSceneObject("Bunny", _transform, models.Bunny);
-        //_bunnyProp = new PawnSceneObject("Sponga", _transform, models.Sponga);
 
-        var _rootNode = new PawnSceneObject("Root", null, null);
+        var modelBufferFactory = new ModelBufferFactory(factory);
+        var bunnyModelBuffer = modelBufferFactory.CreateModelBuffer<Vertex>(models.Bunny);
 
-        _sceneGraph = new SceneGraphImpl(_rootNode); // Iterate over all objects in here.
+        _bunnyProp = new PawnSceneObject("Bunny", _transform, bunnyModelBuffer);
+        _bunnyProp2 = new PawnSceneObject("Bunny 2", transform2, bunnyModelBuffer);
+
         _sceneGraph.AppendTo(_sceneGraph.Root, _bunnyProp);
+        _sceneGraph.AppendTo(_sceneGraph.Root.Children[0], _bunnyProp2);
         
-        _sceneGraph.AppendTo(_sceneGraph.Root, new PawnSceneObject("Prop 2", null, null));
-        _sceneGraph.AppendTo(_sceneGraph.Root.Children[0], new PawnSceneObject("Prop 3", null, null));
+        //_sceneGraph.AppendTo(_sceneGraph.Root, new PawnSceneObject("Prop 2", null, null));
+        //_sceneGraph.AppendTo(_sceneGraph.Root.Children[0], new PawnSceneObject("Prop 3", null, null));
         //
 
         pipelineDescription.PrimitiveTopology = PrimitiveTopology.TriangleList;
@@ -193,14 +206,14 @@ public class Program
         _imguiRenderer = new ImGuiRenderer(_graphicsDevice, pipelineDescription.Outputs, window.Width, window.Height);
 
         _vertexBuffer = factory.CreateBuffer(
-            new(_bunnyProp.Model.GetVertexCount() * Vertex.SizeInBytes, BufferUsage.VertexBuffer)
+            new(_bunnyProp.ModelBuffer.Model.GetVertexCount() * Vertex.SizeInBytes, BufferUsage.VertexBuffer)
         );
 
         _indexBuffer = factory.CreateBuffer(
-            new BufferDescription(_bunnyProp.Model.GetIndexCount() * sizeof(uint), BufferUsage.IndexBuffer)
+            new BufferDescription(_bunnyProp.ModelBuffer.Model.GetIndexCount() * sizeof(uint), BufferUsage.IndexBuffer)
         );
 
-        _graphicsDevice.UpdateBuffer(_indexBuffer, 0, _bunnyProp.Model.GetIndices());
+        // _graphicsDevice.UpdateBuffer(_indexBuffer, 0, _bunnyProp.ModelBuffer.Model.GetIndices());
 
         _resourceSet = factory.CreateResourceSet(
             new ResourceSetDescription(
@@ -296,7 +309,7 @@ public class Program
         _commandList.UpdateBuffer(_projectionUniformBuffer, 0, _orthographicCamera.Projection);
         _commandList.UpdateBuffer(_viewUniformBuffer, 0, _orthographicCamera.View);
 
-        _commandList.UpdateBuffer(_modelUniformBuffer, 0, _bunnyProp.Transform.Matrix);
+        //_commandList.UpdateBuffer(_modelUniformBuffer, 0, _bunnyProp.Transform.Matrix);
 
         var lightingBuffer = new LightingBuffer(
             new Vector4(_orthographicCamera.Position, 1.0f),
@@ -304,14 +317,14 @@ public class Program
         );
         _commandList.UpdateBuffer(_lightingUniformBuffer, 0, lightingBuffer);
 
-        _commandList.SetVertexBuffer(0, _vertexBuffer);
-        _commandList.UpdateBuffer(_vertexBuffer, 0, _bunnyProp.Model.GetVertices());
+        //_commandList.SetVertexBuffer(0, _vertexBuffer);
+        //_commandList.UpdateBuffer(_vertexBuffer, 0, _bunnyProp.ModelBuffer.Model.GetVertices());
 
-        _commandList.SetIndexBuffer(_indexBuffer, IndexFormat.UInt32);
-        _commandList.DrawIndexed(_bunnyProp.Model.GetIndexCount());
+        //_commandList.SetIndexBuffer(_indexBuffer, IndexFormat.UInt32);
+        //_commandList.DrawIndexed(_bunnyProp.ModelBuffer.Model.GetIndexCount());
 
         //
-        // DrawSceneGraphPawns(_sceneGraph.Root, _commandList);
+        DrawSceneGraphPawns(_sceneGraph.Root, _commandList);
         //
 
         _imguiRenderer!.Render(_graphicsDevice, _commandList);
@@ -349,20 +362,36 @@ public class Program
             return;
         }
 
-        if (startingNode.Kind is SceneObjectKind.Pawn)
+        if (startingNode.Kind is SceneObjectKind.Group)
         {
-            if (startingNode is not PawnSceneObject pawn)
+            if (startingNode is not GroupSceneObject group)
             {
                 return;
             }
 
-            // Models should have a vertex buffer of their own...
-            // commandList.SetVertexBuffer(0, pawn.Model.VertexBuffer);
-            // commandList.UpdateBuffer(pawn.Model.VertexBuffer, 0, pawn.Model.GetVertices());
+            foreach (var child in group.Children)
+            {
+                DrawSceneGraphPawns(child, commandList);
+            }
+        }
+        else if (startingNode is PawnSceneObject pawn)
+        {
+            commandList.SetGraphicsResourceSet(0, _resourceSet);
 
-            // Models should have an index buffer of their own...
-            // commandList.SetIndexBuffer(pawn.Model.IndexBuffer, IndexFormat.UInt32);
-            // commandList.DrawIndexed(pawn.Model.GetIndexCount());
+            commandList.UpdateBuffer(_modelUniformBuffer, 0, pawn.Transform.Matrix);
+
+            commandList.SetVertexBuffer(0, pawn.ModelBuffer.VertexBuffer);
+            commandList.UpdateBuffer(pawn.ModelBuffer.VertexBuffer, 0, pawn.ModelBuffer.Model.GetVertices());
+
+            commandList.SetIndexBuffer(pawn.ModelBuffer.IndexBuffer, IndexFormat.UInt32);
+            commandList.UpdateBuffer(pawn.ModelBuffer.IndexBuffer, 0, _bunnyProp.ModelBuffer.Model.GetIndices());
+
+            commandList.DrawIndexed(pawn.ModelBuffer.Model.GetIndexCount());
+
+            foreach (var child in pawn.Children)
+            {
+                DrawSceneGraphPawns(child, commandList);
+            }
         }
     }
 
@@ -448,7 +477,12 @@ public class Program
     }
 }
 
-public struct Vertex(Vector3 position, Vector3 normal)
+public interface IVertex
+{
+    abstract static uint SizeInBytes { get; }
+}
+
+public struct Vertex(Vector3 position, Vector3 normal) : IVertex
 {
     public Vector3 Position = position;
     public Vector3 Normal = normal;
@@ -456,7 +490,7 @@ public struct Vertex(Vector3 position, Vector3 normal)
     // 3 floats for position = 12 bytes
     // 3 floats for normal = 12 bytes
     // Total = 24 bytes
-    public const uint SizeInBytes = 24;
+    public static uint SizeInBytes => 24;
 }
 
 public struct LightingBuffer(Vector4 cameraPosition, Vector4 lightPosition)
