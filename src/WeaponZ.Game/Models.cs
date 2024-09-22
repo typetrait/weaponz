@@ -18,11 +18,16 @@ public class SampleModels
         Bunny =
             _modelLoader.Load($"{Config.AssetsPath}/fbx/Bunny.fbx")
             ?? throw new InvalidOperationException("Failed to load model");
+
+        Sponga =
+            _modelLoader.Load($"{Config.AssetsPath}/fbx/Sponza.fbx")
+            ?? throw new InvalidOperationException("Failed to load model");
     }
 
     public IModel Triangle { get; }
     public IModel Cube { get; }
     public IModel Bunny { get; }
+    public IModel Sponga { get; }
 }
 
 public class ModelLoader
@@ -49,7 +54,15 @@ public class ModelLoader
             return null;
         }
 
-        var model = new AssimpModel { Scene = scene };
+        // Getting vertices and indices from the model is an expensive operation, we need this in memory.
+        // Quick workaround
+        var temp = new AssimpModel { Scene = scene };
+
+        var model = new LocalModel()
+        {
+            Vertices = temp.GetVertices(),
+            Indices = temp.GetIndices(),
+        };
 
         return model;
     }

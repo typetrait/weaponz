@@ -6,6 +6,7 @@ using Veldrid.Sdl2;
 using Veldrid.SPIRV;
 using Veldrid.StartupUtilities;
 using WeaponZ.Game.Input;
+using WeaponZ.Game.SceneGraph;
 using MouseState = WeaponZ.Game.Input.MouseState;
 
 namespace WeaponZ.Game;
@@ -17,11 +18,6 @@ public class Program
     private Pipeline? _pipeline;
     private DeviceBuffer? _vertexBuffer;
     private DeviceBuffer? _indexBuffer;
-    private uint _vertexCount;
-    private uint _indexCount;
-
-    private Vertex[]? _vertices;
-    private uint[]? _indices;
 
     private DeviceBuffer? _projectionUniformBuffer;
     private DeviceBuffer? _viewUniformBuffer;
@@ -42,29 +38,16 @@ public class Program
 
     private Transform? _transform;
 
+    private SceneGraphImpl _sceneGraph;
+
+    private PawnSceneObject _bunnyProp;
+
     public static void Main(string[] args) => new Program().Run(args);
 
     public void Run(string[] args)
     {
         Console.WriteLine("Hello, WeaponZ!");
         Console.WriteLine("Current directory: " + Directory.GetCurrentDirectory());
-
-        var models = new SampleModels();
-
-        _vertices = models.Triangle.GetVertices();
-        _indices = models.Triangle.GetIndices();
-        _vertexCount = models.Triangle.GetVertexCount();
-        _indexCount = models.Triangle.GetIndexCount();
-
-        _vertices = models.Bunny.GetVertices();
-        _indices = models.Bunny.GetIndices();
-        _vertexCount = models.Bunny.GetVertexCount();
-        _indexCount = models.Bunny.GetIndexCount();
-
-        //_vertices = models.Cube.GetVertices();
-        //_indices = models.Cube.GetIndices();
-        //_vertexCount = models.Cube.GetVertexCount();
-        //_indexCount = models.Cube.GetIndexCount();
 
         WindowCreateInfo windowCI =
             new()
@@ -180,6 +163,25 @@ public class Program
             )
         );
 
+        // TODO: NOT HERE
+        _transform = new Transform()
+        {
+            Scale = new Vector3(0.002f),
+        };
+
+        var models = new SampleModels();
+        _bunnyProp = new PawnSceneObject("Bunny", _transform, models.Bunny);
+        //_bunnyProp = new PawnSceneObject("Sponga", _transform, models.Sponga);
+
+        var _rootNode = new PawnSceneObject("Root", null, null);
+
+        _sceneGraph = new SceneGraphImpl(_rootNode); // Iterate over all objects in here.
+        _sceneGraph.AppendTo(_sceneGraph.Root, _bunnyProp);
+        
+        _sceneGraph.AppendTo(_sceneGraph.Root, new PawnSceneObject("Prop 2", null, null));
+        _sceneGraph.AppendTo(_sceneGraph.Root.Children[0], new PawnSceneObject("Prop 3", null, null));
+        //
+
         pipelineDescription.PrimitiveTopology = PrimitiveTopology.TriangleList;
 
         pipelineDescription.ResourceLayouts = [resourcesLayout];
@@ -191,14 +193,14 @@ public class Program
         _imguiRenderer = new ImGuiRenderer(_graphicsDevice, pipelineDescription.Outputs, window.Width, window.Height);
 
         _vertexBuffer = factory.CreateBuffer(
-            new(_vertexCount * Vertex.SizeInBytes, BufferUsage.VertexBuffer)
+            new(_bunnyProp.Model.GetVertexCount() * Vertex.SizeInBytes, BufferUsage.VertexBuffer)
         );
 
         _indexBuffer = factory.CreateBuffer(
-            new BufferDescription(_indexCount * sizeof(uint), BufferUsage.IndexBuffer)
+            new BufferDescription(_bunnyProp.Model.GetIndexCount() * sizeof(uint), BufferUsage.IndexBuffer)
         );
 
-        _graphicsDevice.UpdateBuffer(_indexBuffer, 0, _indices);
+        _graphicsDevice.UpdateBuffer(_indexBuffer, 0, _bunnyProp.Model.GetIndices());
 
         _resourceSet = factory.CreateResourceSet(
             new ResourceSetDescription(
@@ -226,12 +228,7 @@ public class Program
         LogMatrix4x4(_orthographicCamera.View);
 
         _keyboardState = new KeyboardState();
-        _mouseState = new Input.MouseState();
-
-        _transform = new Transform()
-        {
-            Scale = new Vector3(0.002f),
-        };
+        _mouseState = new MouseState();
 
         while (window.Exists)
         {
@@ -259,38 +256,12 @@ public class Program
             return;
         }
 
-        //var model =
-        //    Matrix4x4.CreateFromYawPitchRoll(_rotation, _rotation, _rotation)
-        //    * Matrix4x4.CreateTranslation(new Vector3(0.0f, 0.0f, 0.0f))
-        //    * Matrix4x4.CreateScale(0.002f);
-
         _transform!.RotateY(0.02f);
 
         ImGui.Begin("Scene Graph");
-
-        if (ImGui.TreeNode("Main Player"))
-        {
-            for (int i = 0; i < 3; i++)
-            {
-                if (ImGui.Selectable(i.ToString(), _selection == i))
-                {
-                    _selection = i;
-                }
-            }
-
-            ImGui.TreePop();
-        }
-
-        if (ImGui.TreeNode("Prop - Barrel"))
-        {
-            ImGui.TreePop();
-        }
-
-        if (ImGui.TreeNode("Terrain"))
-        {
-            ImGui.TreePop();
-        }
+        DrawSceneGraph(_sceneGraph.Root);
         ImGui.End();
+
         ImGui.Begin("Transform");
 
         if (ImGui.TreeNodeEx("Position", ImGuiTreeNodeFlags.DefaultOpen))
@@ -301,13 +272,13 @@ public class Program
 
         if (ImGui.TreeNodeEx("Rotation", ImGuiTreeNodeFlags.DefaultOpen))
         {
-            ImGui.DragFloat3("", ref _transform.Rotation);
+            ImGui.DragFloat3("", ref _transform.Rotation, 0.02f);
             ImGui.TreePop();
         }
 
         if (ImGui.TreeNodeEx("Scale", ImGuiTreeNodeFlags.DefaultOpen))
         {
-            ImGui.DragFloat3("", ref _transform.Scale);
+            ImGui.DragFloat3("", ref _transform.Scale, 0.0002f);
             ImGui.TreePop();
         }
 
@@ -321,10 +292,11 @@ public class Program
         _commandList.SetPipeline(_pipeline);
         _commandList.SetGraphicsResourceSet(0, _resourceSet);
 
+        // Uniform Buffers
         _commandList.UpdateBuffer(_projectionUniformBuffer, 0, _orthographicCamera.Projection);
         _commandList.UpdateBuffer(_viewUniformBuffer, 0, _orthographicCamera.View);
 
-        _commandList.UpdateBuffer(_modelUniformBuffer, 0, _transform.Matrix);
+        _commandList.UpdateBuffer(_modelUniformBuffer, 0, _bunnyProp.Transform.Matrix);
 
         var lightingBuffer = new LightingBuffer(
             new Vector4(_orthographicCamera.Position, 1.0f),
@@ -333,10 +305,14 @@ public class Program
         _commandList.UpdateBuffer(_lightingUniformBuffer, 0, lightingBuffer);
 
         _commandList.SetVertexBuffer(0, _vertexBuffer);
-        _commandList.UpdateBuffer(_vertexBuffer, 0, _vertices);
+        _commandList.UpdateBuffer(_vertexBuffer, 0, _bunnyProp.Model.GetVertices());
 
         _commandList.SetIndexBuffer(_indexBuffer, IndexFormat.UInt32);
-        _commandList.DrawIndexed(_indexCount);
+        _commandList.DrawIndexed(_bunnyProp.Model.GetIndexCount());
+
+        //
+        // DrawSceneGraphPawns(_sceneGraph.Root, _commandList);
+        //
 
         _imguiRenderer!.Render(_graphicsDevice, _commandList);
 
@@ -346,6 +322,48 @@ public class Program
 
         graphicsDevice.SubmitCommands(_commandList);
         graphicsDevice.SwapBuffers();
+    }
+
+    private void DrawSceneGraph(ISceneObject? startingNode)
+    {
+        if (startingNode is null)
+        {
+            return;
+        }
+
+        if (ImGui.TreeNode(startingNode.DisplayName))
+        {
+            foreach (var child in startingNode.Children)
+            {
+                DrawSceneGraph(child);
+            }
+
+            ImGui.TreePop();
+        }
+    }
+
+    private void DrawSceneGraphPawns(ISceneObject? startingNode, CommandList commandList)
+    {
+        if (startingNode is null)
+        {
+            return;
+        }
+
+        if (startingNode.Kind is SceneObjectKind.Pawn)
+        {
+            if (startingNode is not PawnSceneObject pawn)
+            {
+                return;
+            }
+
+            // Models should have a vertex buffer of their own...
+            // commandList.SetVertexBuffer(0, pawn.Model.VertexBuffer);
+            // commandList.UpdateBuffer(pawn.Model.VertexBuffer, 0, pawn.Model.GetVertices());
+
+            // Models should have an index buffer of their own...
+            // commandList.SetIndexBuffer(pawn.Model.IndexBuffer, IndexFormat.UInt32);
+            // commandList.DrawIndexed(pawn.Model.GetIndexCount());
+        }
     }
 
     const string VertexShaderSource =
