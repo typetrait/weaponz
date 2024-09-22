@@ -14,7 +14,7 @@ public class Transform
     {
         Position = Vector3.Zero;
         Rotation = Vector3.Zero;
-        Scale = Vector3.Zero;
+        Scale = Vector3.One;
     }
 
     public void TranslateX(float x)
@@ -66,7 +66,7 @@ public class Transform
     {
         var transform = Matrix4x4.Identity;
 
-        transform *= 
+        transform *=
             Matrix4x4.CreateFromYawPitchRoll(Rotation.X, Rotation.Y, Rotation.Z)
             * Matrix4x4.CreateTranslation(Position)
             * Matrix4x4.CreateScale(Scale);

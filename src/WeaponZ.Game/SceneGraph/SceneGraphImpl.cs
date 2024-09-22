@@ -11,6 +11,7 @@ public class SceneGraphImpl
 
     public void AppendTo(ISceneObject parent, ISceneObject sceneObject)
     {
+        sceneObject.Parent = parent;
         parent.Children.Add(sceneObject);
     }
 }

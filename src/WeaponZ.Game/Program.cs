@@ -38,10 +38,10 @@ public class Program
 
     private Transform? _transform;
 
-    private SceneGraphImpl _sceneGraph;
+    private SceneGraphImpl? _sceneGraph;
 
-    private PawnSceneObject _bunnyProp;
-    private PawnSceneObject _bunnyProp2;
+    private PawnSceneObject? _bunnyProp;
+    private PawnSceneObject? _bunnyProp2;
 
     public static void Main(string[] args) => new Program().Run(args);
 
@@ -172,6 +172,8 @@ public class Program
 
         var transform2 = new Transform() { Scale = new Vector3(0.002f), };
 
+        transform2.RotateX(2);
+
         transform2.TranslateY(0.2f);
 
         var models = new SampleModels();
@@ -281,29 +283,31 @@ public class Program
             return;
         }
 
-        _transform!.RotateY(1.0f * (float)deltaTime.TotalSeconds);
+        // _transform!.RotateY(1.0f * (float)deltaTime.TotalSeconds);
+
+        _bunnyProp2!.Transform.RotateY(1.0f * (float)deltaTime.TotalSeconds);
 
         ImGui.Begin("Scene Graph");
-        DrawSceneGraph(_sceneGraph.Root);
+        DrawSceneGraph(_sceneGraph!.Root);
         ImGui.End();
 
         ImGui.Begin("Transform");
 
         if (ImGui.TreeNodeEx("Position", ImGuiTreeNodeFlags.DefaultOpen))
         {
-            ImGui.DragFloat3("", ref _transform.Position);
+            ImGui.DragFloat3("", ref _transform!.Position);
             ImGui.TreePop();
         }
 
         if (ImGui.TreeNodeEx("Rotation", ImGuiTreeNodeFlags.DefaultOpen))
         {
-            ImGui.DragFloat3("", ref _transform.Rotation, 0.02f);
+            ImGui.DragFloat3("", ref _transform!.Rotation, 0.02f);
             ImGui.TreePop();
         }
 
         if (ImGui.TreeNodeEx("Scale", ImGuiTreeNodeFlags.DefaultOpen))
         {
-            ImGui.DragFloat3("", ref _transform.Scale, 0.0002f);
+            ImGui.DragFloat3("", ref _transform!.Scale, 0.0002f);
             ImGui.TreePop();
         }
 
@@ -374,6 +378,8 @@ public class Program
             return;
         }
 
+        startingNode.UpdateGlobalTransform();
+
         if (startingNode.Kind is SceneObjectKind.Group)
         {
             if (startingNode is not GroupSceneObject group)
@@ -390,7 +396,7 @@ public class Program
         {
             commandList.SetGraphicsResourceSet(0, _resourceSet);
 
-            commandList.UpdateBuffer(_modelUniformBuffer, 0, pawn.Transform.Matrix);
+            commandList.UpdateBuffer(_modelUniformBuffer, 0, pawn.GlobalTransform.Matrix);
 
             commandList.SetVertexBuffer(0, pawn.ModelBuffer.VertexBuffer);
             commandList.UpdateBuffer(
@@ -403,7 +409,7 @@ public class Program
             commandList.UpdateBuffer(
                 pawn.ModelBuffer.IndexBuffer,
                 0,
-                _bunnyProp.ModelBuffer.Model.GetIndices()
+                _bunnyProp!.ModelBuffer.Model.GetIndices()
             );
 
             commandList.DrawIndexed(pawn.ModelBuffer.Model.GetIndexCount());
