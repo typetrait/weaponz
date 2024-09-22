@@ -1,4 +1,5 @@
-﻿using System.Numerics;
+﻿using ImGuiNET;
+using System.Numerics;
 using System.Text;
 using Veldrid;
 using Veldrid.Sdl2;
@@ -13,7 +14,6 @@ public class Program
     private GraphicsDevice? _graphicsDevice;
     private CommandList? _commandList;
     private Pipeline? _pipeline;
-
     private DeviceBuffer? _vertexBuffer;
     private DeviceBuffer? _indexBuffer;
     private uint _vertexCount;
@@ -30,12 +30,16 @@ public class Program
 
     private ResourceSet? _resourceSet;
 
+    private ImGuiRenderer? _imguiRenderer;
+
     private OrthographicCamera? _orthographicCamera;
 
     private Keyboard? _keyboard;
     private Mouse? _mouse;
 
     private float _rotation = 0.0f;
+
+    private Transform? _transform;
 
     public static void Main(string[] args) => new Program().Run(args);
 
@@ -80,7 +84,7 @@ public class Program
                 PreferDepthRangeZeroToOne = true,
             };
         _graphicsDevice = VeldridStartup.CreateGraphicsDevice(window, options);
-
+        
         //_graphicsDevice = VeldridStartup.CreateDefaultOpenGLGraphicsDevice(options, window, GraphicsBackend.OpenGL);
         //_graphicsDevice = VeldridStartup.CreateVulkanGraphicsDevice(options, window);
 
@@ -183,6 +187,8 @@ public class Program
 
         _pipeline = factory.CreateGraphicsPipeline(pipelineDescription);
 
+        _imguiRenderer = new ImGuiRenderer(_graphicsDevice, pipelineDescription.Outputs, window.Width, window.Height);
+
         _vertexBuffer = factory.CreateBuffer(
             new(_vertexCount * Vertex.SizeInBytes, BufferUsage.VertexBuffer)
         );
@@ -221,15 +227,24 @@ public class Program
         _keyboard = new Keyboard();
         _mouse = new Mouse();
 
+        _transform = new Transform()
+        {
+            Scale = new Vector3(0.002f),
+        };
+
         while (window.Exists)
         {
             InputSnapshot inputSnapshot = window.PumpEvents();
             _keyboard.UpdateFromSnapshot(inputSnapshot);
             _mouse.UpdateFromSnapshot(inputSnapshot);
 
+            _imguiRenderer.Update(1f / 60f, inputSnapshot);
+
             Draw(_graphicsDevice);
         }
     }
+
+    private float _selection = 0;
 
     public void Draw(GraphicsDevice graphicsDevice)
     {
@@ -243,6 +258,60 @@ public class Program
             return;
         }
 
+        //var model =
+        //    Matrix4x4.CreateFromYawPitchRoll(_rotation, _rotation, _rotation)
+        //    * Matrix4x4.CreateTranslation(new Vector3(0.0f, 0.0f, 0.0f))
+        //    * Matrix4x4.CreateScale(0.002f);
+
+        _transform!.RotateY(0.02f);
+
+        ImGui.Begin("Scene Graph");
+
+        if (ImGui.TreeNode("Main Player"))
+        {
+            for (int i = 0; i < 3; i++)
+            {
+                if (ImGui.Selectable(i.ToString(), _selection == i))
+                {
+                    _selection = i;
+                }
+            }
+
+            ImGui.TreePop();
+        }
+
+        if (ImGui.TreeNode("Prop - Barrel"))
+        {
+            ImGui.TreePop();
+        }
+
+        if (ImGui.TreeNode("Terrain"))
+        {
+            ImGui.TreePop();
+        }
+        ImGui.End();
+        ImGui.Begin("Transform");
+
+        if (ImGui.TreeNodeEx("Position", ImGuiTreeNodeFlags.DefaultOpen))
+        {
+            ImGui.DragFloat3("", ref _transform.Position);
+            ImGui.TreePop();
+        }
+
+        if (ImGui.TreeNodeEx("Rotation", ImGuiTreeNodeFlags.DefaultOpen))
+        {
+            ImGui.DragFloat3("", ref _transform.Rotation);
+            ImGui.TreePop();
+        }
+
+        if (ImGui.TreeNodeEx("Scale", ImGuiTreeNodeFlags.DefaultOpen))
+        {
+            ImGui.DragFloat3("", ref _transform.Scale);
+            ImGui.TreePop();
+        }
+
+        ImGui.End();
+
         _commandList.Begin();
         _commandList.SetFramebuffer(graphicsDevice.SwapchainFramebuffer);
         _commandList.ClearColorTarget(0, RgbaFloat.CornflowerBlue);
@@ -254,14 +323,7 @@ public class Program
         _commandList.UpdateBuffer(_projectionUniformBuffer, 0, _orthographicCamera.Projection);
         _commandList.UpdateBuffer(_viewUniformBuffer, 0, _orthographicCamera.View);
 
-        _rotation += 0.0002f;
-
-        var model =
-            Matrix4x4.CreateFromYawPitchRoll(_rotation, _rotation, _rotation)
-            * Matrix4x4.CreateTranslation(new Vector3(0.0f, 0.0f, 0.0f))
-            * Matrix4x4.CreateScale(0.002f);
-
-        _commandList.UpdateBuffer(_modelUniformBuffer, 0, model);
+        _commandList.UpdateBuffer(_modelUniformBuffer, 0, _transform.Matrix);
 
         var lightingBuffer = new LightingBuffer(
             new Vector4(_orthographicCamera.Position, 1.0f),
@@ -274,6 +336,9 @@ public class Program
 
         _commandList.SetIndexBuffer(_indexBuffer, IndexFormat.UInt32);
         _commandList.DrawIndexed(_indexCount);
+
+        _imguiRenderer!.Render(_graphicsDevice, _commandList);
+
         _commandList.End();
 
         _orthographicCamera.Update(_keyboard, _mouse, 0.0f);
