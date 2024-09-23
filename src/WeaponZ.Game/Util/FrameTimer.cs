@@ -1,6 +1,6 @@
 using System.Diagnostics;
 
-namespace WeaponZ.Game;
+namespace WeaponZ.Game.Util;
 
 public class FrameTimer
 {

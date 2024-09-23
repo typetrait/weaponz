@@ -1,10 +1,10 @@
-﻿namespace WeaponZ.Game.SceneGraph;
+﻿namespace WeaponZ.Game.Scenes;
 
-public class SceneGraphImpl
+public class SceneGraph
 {
     public ISceneObject Root { get; }
 
-    public SceneGraphImpl(ISceneObject root)
+    public SceneGraph(ISceneObject root)
     {
         Root = root;
     }

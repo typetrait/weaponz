@@ -1,6 +1,6 @@
 ﻿using System.Numerics;
 
-namespace WeaponZ.Game;
+namespace WeaponZ.Game.Scenes;
 
 public class Transform
 {

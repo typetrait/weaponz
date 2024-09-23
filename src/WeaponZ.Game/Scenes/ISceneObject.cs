@@ -1,6 +1,4 @@
-﻿using System.Numerics;
-
-namespace WeaponZ.Game.SceneGraph;
+﻿namespace WeaponZ.Game.Scenes;
 
 public interface ISceneObject
 {
@@ -26,7 +24,7 @@ public interface ISceneObject
             {
                 Scale = Transform.Scale, // t.Scale = Transform.Scale * Parent.Transform.Scale;
                 Position = Transform.Position + Parent.GlobalTransform.Position,
-                Rotation = Transform.Rotation + Parent.GlobalTransform.Rotation
+                Rotation = Transform.Rotation + Parent.GlobalTransform.Rotation,
             };
         }
     }
@@ -39,5 +37,5 @@ public enum SceneObjectKind
     Pawn,
     Group,
     Light,
-    Camera
+    Camera,
 }

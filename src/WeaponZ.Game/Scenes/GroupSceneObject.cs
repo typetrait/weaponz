@@ -1,6 +1,4 @@
-﻿using System.Numerics;
-
-namespace WeaponZ.Game.SceneGraph;
+﻿namespace WeaponZ.Game.Scenes;
 
 public class GroupSceneObject : ISceneObject
 {

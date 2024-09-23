@@ -1,7 +1,7 @@
 ﻿using System.Numerics;
 using WeaponZ.Game.Input;
 
-namespace WeaponZ.Game;
+namespace WeaponZ.Game.Render;
 
 public class OrthographicCamera
 {

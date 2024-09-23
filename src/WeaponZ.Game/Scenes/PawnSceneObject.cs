@@ -1,6 +1,6 @@
-﻿using System.Numerics;
+﻿using WeaponZ.Game.Models;
 
-namespace WeaponZ.Game.SceneGraph;
+namespace WeaponZ.Game.Scenes;
 
 public class PawnSceneObject : ISceneObject
 {
