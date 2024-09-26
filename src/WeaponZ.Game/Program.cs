@@ -42,6 +42,8 @@ public class Program
     private Transform? _transform;
     private LightingBuffer _lightingBuffer;
 
+    private ISceneObject? _selectedObject = null;
+
     /// <summary>
     /// Entry point
     /// </summary>
@@ -196,9 +198,8 @@ public class Program
 
         // Models
         _transform = new Transform() { Scale = new Vector3(0.002f) };
-        var transform2 = new Transform() { Scale = new Vector3(0.002f) };
-        transform2.RotateX(2);
-        transform2.TranslateY(0.2f);
+        var transform2 = new Transform() { Scale = new Vector3(0.001f) };
+        transform2.TranslateY(400.0f);
 
         var models = new SampleModels();
         var modelBufferFactory = new ModelBufferFactory(resourceFactory);
@@ -252,11 +253,15 @@ public class Program
         _orthographicCamera.Update(_keyboardState, _mouseState, deltaTime);
 
         // Update transforms
-        _bunnyProp2!.Transform.RotateY(1.0f * (float)deltaTime.TotalSeconds);
+        //_bunnyProp2!.Transform.RotateY(1.0f * (float)deltaTime.TotalSeconds);
 
         // Setup imgui windows
         SetupSceneGraphUi(_sceneGraph);
-        SetupTransformUi(_transform);
+
+        if (_selectedObject is not null)
+        {
+            SetupTransformUi(_selectedObject.Transform);
+        }
 
         // Begin commands
         _commandList.Begin();
@@ -289,7 +294,7 @@ public class Program
     /// <summary>
     /// Draws the scene graph ui
     /// </summary>
-    private static void SetupSceneGraphUi(SceneGraph sceneGraph)
+    private void SetupSceneGraphUi(SceneGraph sceneGraph)
     {
         ImGui.Begin("Scene Graph");
 
@@ -301,18 +306,33 @@ public class Program
     /// <summary>
     /// Draws the scene graph ui nodes
     /// </summary>
-    private static void DrawSceneGraphUiNode(ISceneObject sceneObject)
+    private void DrawSceneGraphUiNode(ISceneObject sceneObject)
     {
-        if (ImGui.TreeNode(sceneObject.DisplayName))
+        if (sceneObject is null) return;
+
+        var treeNodeFlags = ImGuiTreeNodeFlags.OpenOnArrow;
+        if (_selectedObject == sceneObject)
+        {
+            treeNodeFlags |= ImGuiTreeNodeFlags.Selected;
+        }
+
+        bool nodeOpen = ImGui.TreeNodeEx(sceneObject.DisplayName, treeNodeFlags);
+
+        if (ImGui.IsItemClicked())
+        {
+            _selectedObject = sceneObject;
+        }
+
+        if (nodeOpen)
         {
             foreach (var child in sceneObject.Children)
             {
                 DrawSceneGraphUiNode(child);
             }
-
             ImGui.TreePop();
         }
     }
+
 
     /// <summary>
     /// Draws the transform ui
