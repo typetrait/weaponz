@@ -1,4 +1,4 @@
-﻿namespace WeaponZ.Game.Scenes;
+﻿namespace WeaponZ.Game.Scene;
 
 public class SceneGraph
 {

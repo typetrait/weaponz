@@ -6,7 +6,7 @@ namespace WeaponZ.Game.Models;
 
 public class AssimpModel
 {
-    public required Scene Scene { get; init; }
+    public required Assimp.Scene Scene { get; init; }
 
     public Vertex[] GetVertices()
     {

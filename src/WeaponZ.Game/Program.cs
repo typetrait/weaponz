@@ -5,13 +5,13 @@ using Veldrid.StartupUtilities;
 using WeaponZ.Game.Input;
 using WeaponZ.Game.Models;
 using WeaponZ.Game.Render;
-using WeaponZ.Game.Scenes;
+using WeaponZ.Game.Scene;
 using WeaponZ.Game.Util;
 using MouseState = WeaponZ.Game.Input.MouseState;
 
 namespace WeaponZ.Game;
 
-public class Program
+public class Program : IInputContext
 {
     // Rendering
     private Pipeline? _pipeline;
@@ -43,6 +43,14 @@ public class Program
     private LightingBuffer _lightingBuffer;
 
     private ISceneObject? _selectedObject = null;
+
+    private int _transformOptionSelection = 0;
+
+    public event EventHandler<MouseButtonEventArgs>? MouseButtonPressed;
+    public event EventHandler<MouseButtonEventArgs>? MouseButtonReleased;
+    public event EventHandler<MouseEventArgs>? MouseMoved;
+    public event EventHandler? KeyPressed;
+    public event EventHandler? KeyReleased;
 
     /// <summary>
     /// Entry point
@@ -211,6 +219,8 @@ public class Program
         _sceneGraph.AppendTo(_sceneGraph.Root, _bunnyProp);
         _sceneGraph.AppendTo(_sceneGraph.Root.Children[0], _bunnyProp2);
 
+        _sceneGraph.AppendTo(_sceneGraph.Root, new CameraSceneObject("Default Camera", new Transform(), _orthographicCamera, this));
+
         _lightingBuffer = new LightingBuffer(
             new Vector4(_orthographicCamera.Position, 1.0f),
             new Vector4(0.0f, 0.0f, 3.0f, 1.0f)
@@ -266,7 +276,7 @@ public class Program
         // Begin commands
         _commandList.Begin();
         _commandList.SetFramebuffer(_graphicsDevice.SwapchainFramebuffer);
-        _commandList.ClearColorTarget(0, RgbaFloat.CornflowerBlue);
+        _commandList.ClearColorTarget(0, new RgbaFloat(0.1f, 0.1f, 0.1f, 1.0f));
         _commandList.ClearDepthStencil(1.0f);
         _commandList.SetPipeline(_pipeline);
 
@@ -337,25 +347,38 @@ public class Program
     /// <summary>
     /// Draws the transform ui
     /// </summary>
-    private static void SetupTransformUi(Transform transform)
+    private void SetupTransformUi(Transform transform)
     {
-        ImGui.Begin("Transform");
+        ImGui.Begin("Scene Object");
 
-        if (ImGui.TreeNodeEx("Position", ImGuiTreeNodeFlags.DefaultOpen))
-        {
-            ImGui.DragFloat3("", ref transform.Position);
-            ImGui.TreePop();
-        }
+        Transform t = _transformOptionSelection == 0 ? _selectedObject!.GlobalTransform : _selectedObject!.Transform;
 
-        if (ImGui.TreeNodeEx("Rotation", ImGuiTreeNodeFlags.DefaultOpen))
-        {
-            ImGui.DragFloat3("", ref transform.Rotation, 0.02f);
-            ImGui.TreePop();
-        }
+        ImGui.Text($"{_selectedObject?.DisplayName} [{_selectedObject?.Kind}]");
 
-        if (ImGui.TreeNodeEx("Scale", ImGuiTreeNodeFlags.DefaultOpen))
+        if (ImGui.TreeNodeEx("Transform"))
         {
-            ImGui.DragFloat3("", ref transform.Scale, 0.0002f);
+            if (ImGui.TreeNodeEx("Position", ImGuiTreeNodeFlags.DefaultOpen))
+            {
+                ImGui.DragFloat3("", ref t.Position);
+                ImGui.TreePop();
+            }
+
+            if (ImGui.TreeNodeEx("Rotation", ImGuiTreeNodeFlags.DefaultOpen))
+            {
+                ImGui.DragFloat3("", ref t.Rotation, 0.02f);
+                ImGui.TreePop();
+            }
+
+            if (ImGui.TreeNodeEx("Scale", ImGuiTreeNodeFlags.DefaultOpen))
+            {
+                ImGui.DragFloat3("", ref t.Scale, 0.0002f);
+                ImGui.TreePop();
+            }
+
+            ImGui.RadioButton("Global", ref _transformOptionSelection, 0);
+            ImGui.SameLine();
+            ImGui.RadioButton("Local", ref _transformOptionSelection, 1);
+
             ImGui.TreePop();
         }
 

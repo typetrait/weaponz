@@ -80,11 +80,6 @@ public class OrthographicCamera
             translation += -Vector3.UnitY * speed;
         }
 
-        if (mouse.IsButtonDown(Veldrid.MouseButton.Left))
-        {
-            Console.WriteLine($"Mouse clicked at: X = {mouse.X}; Y = {mouse.Y}");
-        }
-
         Position += translation;
         UpdateViewMatrix();
     }

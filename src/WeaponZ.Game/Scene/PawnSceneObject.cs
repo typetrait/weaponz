@@ -1,6 +1,6 @@
 ﻿using WeaponZ.Game.Models;
 
-namespace WeaponZ.Game.Scenes;
+namespace WeaponZ.Game.Scene;
 
 public class PawnSceneObject : ISceneObject
 {

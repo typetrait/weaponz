@@ -1,4 +1,4 @@
-﻿namespace WeaponZ.Game.Scenes;
+﻿namespace WeaponZ.Game.Scene;
 
 public interface ISceneObject
 {
@@ -28,8 +28,6 @@ public interface ISceneObject
             };
         }
     }
-
-    // Scene state maybe? So ingame/editing are different and entities dont do gameplay logic during editing...
 }
 
 public enum SceneObjectKind
