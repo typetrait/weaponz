@@ -20,6 +20,27 @@ public static class PrimitiveModelFactory
         return triangle;
     }
 
+    public static Model CreateQuad()
+    {
+        var quad = new Model
+        {
+            Vertices =
+            [
+                new(new Vector3(-0.5f, -0.5f, 0.0f), new Vector3(0.0f, 0.0f, 1.0f)),
+                new(new Vector3(0.5f, -0.5f, 0.0f), new Vector3(0.0f, 0.0f, 1.0f)),
+                new(new Vector3(-0.5f, 0.5f, 0.0f), new Vector3(0.0f, 0.0f, 1.0f)),
+                new(new Vector3(0.5f, 0.5f, 0.0f), new Vector3(0.0f, 0.0f, 1.0f))
+            ],
+            Indices =
+            [
+                0, 1, 2,
+                2, 1, 3
+            ],
+        };
+
+        return quad;
+    }
+
     public static Model CreateCube()
     {
         var size = 1;

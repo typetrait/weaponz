@@ -1,5 +1,5 @@
 using System.Numerics;
-using Assimp;
+
 using WeaponZ.Game.Render;
 
 namespace WeaponZ.Game.Models;

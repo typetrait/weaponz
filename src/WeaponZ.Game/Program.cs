@@ -14,33 +14,25 @@ namespace WeaponZ.Game;
 public class Program : IInputContext
 {
     // Rendering
-    private Pipeline? _pipeline;
-    private ResourceSet? _resourceSet;
-    private CommandList? _commandList;
     private GraphicsDevice? _graphicsDevice;
+    private Renderer? _renderer;
 
-    // Imgui
-    private ImGuiRenderer? _imguiRenderer;
+    // ImGui
+    private ImGuiRenderer? _imGuiRenderer;
 
     // Camera
     private OrthographicCamera? _orthographicCamera;
+    private CameraSceneObject? _mainCamera;
 
     // Input
     private KeyboardState? _keyboardState;
     private MouseState? _mouseState;
-
-    // Uniform buffers
-    private DeviceBuffer? _projectionUniformBuffer;
-    private DeviceBuffer? _viewUniformBuffer;
-    private DeviceBuffer? _modelUniformBuffer;
-    private DeviceBuffer? _lightingUniformBuffer;
 
     // Scene
     private SceneGraph? _sceneGraph;
     private PawnSceneObject? _bunnyProp;
     private PawnSceneObject? _bunnyProp2;
     private Transform? _transform;
-    private LightingBuffer _lightingBuffer;
 
     private ISceneObject? _selectedObject = null;
 
@@ -89,99 +81,21 @@ public class Program : IInputContext
 
         // Default graphics device
         _graphicsDevice = VeldridStartup.CreateGraphicsDevice(window, graphicsDeviceOptions);
-        // // OpenGL graphics device
+
+        // OpenGL graphics device
         // _graphicsDevice = VeldridStartup.CreateDefaultOpenGLGraphicsDevice(
         //     graphicsDeviceOptions,
         //     window,
         //     GraphicsBackend.OpenGL
         // );
-        // // Vulkan graphics device
+
+        // Vulkan graphics device
         // _graphicsDevice = VeldridStartup.CreateVulkanGraphicsDevice(graphicsDeviceOptions, window);
 
-        // Resource factory
-        var resourceFactory = _graphicsDevice.ResourceFactory;
-
-        // Vertex layout descriptions
-        var vertexLayoutDescription = new VertexLayoutDescription(
-            new VertexElementDescription(
-                "Position",
-                VertexElementFormat.Float3,
-                VertexElementSemantic.TextureCoordinate
-            ),
-            new VertexElementDescription( //
-                "Normal",
-                VertexElementFormat.Float3,
-                VertexElementSemantic.TextureCoordinate
-            )
-        );
-
-        // Uniform buffers
-        _projectionUniformBuffer = resourceFactory.CreateBuffer(
-            new BufferDescription(64, BufferUsage.UniformBuffer | BufferUsage.Dynamic)
-        );
-        _viewUniformBuffer = resourceFactory.CreateBuffer(
-            new BufferDescription(64, BufferUsage.UniformBuffer | BufferUsage.Dynamic)
-        );
-        _modelUniformBuffer = resourceFactory.CreateBuffer(
-            new BufferDescription(64, BufferUsage.UniformBuffer | BufferUsage.Dynamic)
-        );
-        _lightingUniformBuffer = resourceFactory.CreateBuffer(
-            new BufferDescription(32, BufferUsage.UniformBuffer | BufferUsage.Dynamic)
-        );
-
-        // Resource layout
-        var resourceLayoutDescription = new ResourceLayoutDescription(
-            new ResourceLayoutElementDescription("ProjectionBuffer", ResourceKind.UniformBuffer, ShaderStages.Vertex),
-            new ResourceLayoutElementDescription("ViewBuffer", ResourceKind.UniformBuffer, ShaderStages.Vertex),
-            new ResourceLayoutElementDescription("ModelBuffer", ResourceKind.UniformBuffer, ShaderStages.Vertex),
-            new ResourceLayoutElementDescription("LightingBuffer", ResourceKind.UniformBuffer, ShaderStages.Fragment)
-        );
-
-        var resourceLayout = resourceFactory.CreateResourceLayout(resourceLayoutDescription);
-
-        // Resource set
-        _resourceSet = resourceFactory.CreateResourceSet(
-            new ResourceSetDescription(
-                resourceLayout,
-                _projectionUniformBuffer,
-                _viewUniformBuffer,
-                _modelUniformBuffer,
-                _lightingUniformBuffer
-            )
-        );
-
-        // Shaders
-        var sampleShaders = new SampleShaders(resourceFactory);
-        var shaderSetDescription = new ShaderSetDescription([vertexLayoutDescription], sampleShaders.ShaderGroup1);
-
-        // Rasterizer
-        var rasterizerStateDescription = new RasterizerStateDescription(
-            cullMode: FaceCullMode.Back,
-            fillMode: PolygonFillMode.Solid,
-            frontFace: FrontFace.CounterClockwise,
-            depthClipEnabled: true,
-            scissorTestEnabled: false
-        );
-
-        // Pipeline
-        var pipelineDescription = new GraphicsPipelineDescription
-        {
-            ShaderSet = shaderSetDescription,
-            ResourceLayouts = [resourceLayout],
-            RasterizerState = rasterizerStateDescription,
-            PrimitiveTopology = PrimitiveTopology.TriangleList,
-            BlendState = BlendStateDescription.SingleOverrideBlend,
-            DepthStencilState = DepthStencilStateDescription.DepthOnlyLessEqual,
-            Outputs = _graphicsDevice.SwapchainFramebuffer.OutputDescription,
-        };
-
-        _pipeline = resourceFactory.CreateGraphicsPipeline(pipelineDescription);
-
-        // Command list
-        _commandList = resourceFactory.CreateCommandList();
+        _renderer = new Renderer(_graphicsDevice);
 
         // Imgui
-        _imguiRenderer = new ImGuiRenderer(_graphicsDevice, pipelineDescription.Outputs, window.Width, window.Height);
+        _imGuiRenderer = new ImGuiRenderer(_graphicsDevice, _renderer.PipelineOutput, window.Width, window.Height);
 
         // Camera
         _orthographicCamera = new OrthographicCamera(
@@ -191,6 +105,7 @@ public class Program : IInputContext
             100.0f,
             new Vector3(0.0f, 0.0f, 3.0f)
         );
+        _mainCamera = new CameraSceneObject("Default Camera", new Transform(), _orthographicCamera, this);
 
         // Inputs
         _keyboardState = new KeyboardState();
@@ -210,7 +125,7 @@ public class Program : IInputContext
         transform2.TranslateY(400.0f);
 
         var models = new SampleModels();
-        var modelBufferFactory = new ModelBufferFactory(resourceFactory);
+        var modelBufferFactory = new ModelBufferFactory(_graphicsDevice.ResourceFactory);
         var bunnyModelBuffer = modelBufferFactory.CreateModelBuffer<Vertex>(models.Bunny);
 
         _bunnyProp = new PawnSceneObject("Bunny", _transform, bunnyModelBuffer);
@@ -219,12 +134,12 @@ public class Program : IInputContext
         _sceneGraph.AppendTo(_sceneGraph.Root, _bunnyProp);
         _sceneGraph.AppendTo(_sceneGraph.Root.Children[0], _bunnyProp2);
 
-        _sceneGraph.AppendTo(_sceneGraph.Root, new CameraSceneObject("Default Camera", new Transform(), _orthographicCamera, this));
+        _sceneGraph.AppendTo(_sceneGraph.Root, _mainCamera);
 
-        _lightingBuffer = new LightingBuffer(
-            new Vector4(_orthographicCamera.Position, 1.0f),
-            new Vector4(0.0f, 0.0f, 3.0f, 1.0f)
-        );
+        var light1 = new LightSceneObject("Light 1", new Transform() { Position = new Vector3(0.0f, 0.0f, 3.0f) });
+        _sceneGraph.AppendTo(_sceneGraph.Root, light1);
+
+        SetupImGuiStyles();
 
         // Main loop
         while (window.Exists)
@@ -233,7 +148,7 @@ public class Program : IInputContext
             _keyboardState.UpdateFromSnapshot(inputSnapshot);
             _mouseState.UpdateFromSnapshot(inputSnapshot);
 
-            _imguiRenderer.Update((float)deltaTime.TotalSeconds, inputSnapshot);
+            _imGuiRenderer.Update((float)deltaTime.TotalSeconds, inputSnapshot);
 
             Draw(deltaTime);
 
@@ -245,15 +160,13 @@ public class Program : IInputContext
     public void Draw(TimeSpan deltaTime)
     {
         // Validate resources
-        if (
-            _commandList is null
-            || _graphicsDevice is null
+        if (_graphicsDevice is null
             || _orthographicCamera is null
             || _keyboardState is null
             || _mouseState is null
             || _sceneGraph is null
             || _transform is null
-            || _imguiRenderer is null
+            || _imGuiRenderer is null
         )
         {
             throw new InvalidOperationException("Failed to initialize resources.");
@@ -262,10 +175,7 @@ public class Program : IInputContext
         // Update camera
         _orthographicCamera.Update(_keyboardState, _mouseState, deltaTime);
 
-        // Update transforms
-        //_bunnyProp2!.Transform.RotateY(1.0f * (float)deltaTime.TotalSeconds);
-
-        // Setup imgui windows
+        // Setup ImGui windows
         SetupSceneGraphUi(_sceneGraph);
 
         if (_selectedObject is not null)
@@ -273,32 +183,15 @@ public class Program : IInputContext
             SetupTransformUi(_selectedObject.Transform);
         }
 
-        // Begin commands
-        _commandList.Begin();
-        _commandList.SetFramebuffer(_graphicsDevice.SwapchainFramebuffer);
-        _commandList.ClearColorTarget(0, new RgbaFloat(0.1f, 0.1f, 0.1f, 1.0f));
-        _commandList.ClearDepthStencil(1.0f);
-        _commandList.SetPipeline(_pipeline);
+        _renderer?.BeginFrame(_mainCamera!, _sceneGraph);
 
-        // Camera buffers
-        _commandList.SetGraphicsResourceSet(0, _resourceSet);
-        _commandList.UpdateBuffer(_projectionUniformBuffer, 0, _orthographicCamera.Projection);
-        _commandList.UpdateBuffer(_viewUniformBuffer, 0, _orthographicCamera.View);
+        // Draw Scene
+        _renderer?.DrawSceneGraphNode(_sceneGraph.Root);
 
-        // Lighting buffers
-        _commandList.SetGraphicsResourceSet(0, _resourceSet);
-        _commandList.UpdateBuffer(_lightingUniformBuffer, 0, _lightingBuffer);
+        // Draw ImGui
+        _imGuiRenderer.Render(_graphicsDevice, _renderer?._commandList);
 
-        // Model buffers
-        DrawSceneGraph(_sceneGraph);
-
-        // Render imgui
-        _imguiRenderer.Render(_graphicsDevice, _commandList);
-
-        // End frame
-        _commandList.End();
-        _graphicsDevice.SubmitCommands(_commandList);
-        _graphicsDevice.SwapBuffers();
+        _renderer?.EndFrame();
     }
 
     /// <summary>
@@ -355,6 +248,8 @@ public class Program : IInputContext
 
         ImGui.Text($"{_selectedObject?.DisplayName} [{_selectedObject?.Kind}]");
 
+        ImGui.Separator();
+
         if (ImGui.TreeNodeEx("Transform"))
         {
             if (ImGui.TreeNodeEx("Position", ImGuiTreeNodeFlags.DefaultOpen))
@@ -385,56 +280,87 @@ public class Program : IInputContext
         ImGui.End();
     }
 
-    /// <summary>
-    /// Draws the scene graph
-    /// </summary>
-    private void DrawSceneGraph(SceneGraph sceneGraph)
+    public static void SetupImGuiStyles()
     {
-        DrawSceneGraphNode(sceneGraph.Root);
-    }
+        ImGuiStylePtr style = ImGui.GetStyle();
+        var colors = style.Colors;
+        colors[(int)ImGuiCol.Text] = new Vector4(1.00f, 1.00f, 1.00f, 1.00f);
+        colors[(int)ImGuiCol.TextDisabled] = new Vector4(0.50f, 0.50f, 0.50f, 1.00f);
+        colors[(int)ImGuiCol.WindowBg] = new Vector4(0.10f, 0.10f, 0.10f, 1.00f);
+        colors[(int)ImGuiCol.ChildBg] = new Vector4(0.00f, 0.00f, 0.00f, 0.00f);
+        colors[(int)ImGuiCol.PopupBg] = new Vector4(0.19f, 0.19f, 0.19f, 0.92f);
+        colors[(int)ImGuiCol.Border] = new Vector4(0.19f, 0.19f, 0.19f, 0.29f);
+        colors[(int)ImGuiCol.BorderShadow] = new Vector4(0.00f, 0.00f, 0.00f, 0.24f);
+        colors[(int)ImGuiCol.FrameBg] = new Vector4(0.05f, 0.05f, 0.05f, 0.54f);
+        colors[(int)ImGuiCol.FrameBgHovered] = new Vector4(0.19f, 0.19f, 0.19f, 0.54f);
+        colors[(int)ImGuiCol.FrameBgActive] = new Vector4(0.20f, 0.22f, 0.23f, 1.00f);
+        colors[(int)ImGuiCol.TitleBg] = new Vector4(0.00f, 0.00f, 0.00f, 1.00f);
+        colors[(int)ImGuiCol.TitleBgActive] = new Vector4(0.06f, 0.06f, 0.06f, 1.00f);
+        colors[(int)ImGuiCol.TitleBgCollapsed] = new Vector4(0.00f, 0.00f, 0.00f, 1.00f);
+        colors[(int)ImGuiCol.MenuBarBg] = new Vector4(0.14f, 0.14f, 0.14f, 1.00f);
+        colors[(int)ImGuiCol.ScrollbarBg] = new Vector4(0.05f, 0.05f, 0.05f, 0.54f);
+        colors[(int)ImGuiCol.ScrollbarGrab] = new Vector4(0.34f, 0.34f, 0.34f, 0.54f);
+        colors[(int)ImGuiCol.ScrollbarGrabHovered] = new Vector4(0.40f, 0.40f, 0.40f, 0.54f);
+        colors[(int)ImGuiCol.ScrollbarGrabActive] = new Vector4(0.56f, 0.56f, 0.56f, 0.54f);
+        colors[(int)ImGuiCol.CheckMark] = new Vector4(0.33f, 0.67f, 0.86f, 1.00f);
+        colors[(int)ImGuiCol.SliderGrab] = new Vector4(0.34f, 0.34f, 0.34f, 0.54f);
+        colors[(int)ImGuiCol.SliderGrabActive] = new Vector4(0.56f, 0.56f, 0.56f, 0.54f);
+        colors[(int)ImGuiCol.Button] = new Vector4(0.05f, 0.05f, 0.05f, 0.54f);
+        colors[(int)ImGuiCol.ButtonHovered] = new Vector4(0.19f, 0.19f, 0.19f, 0.54f);
+        colors[(int)ImGuiCol.ButtonActive] = new Vector4(0.20f, 0.22f, 0.23f, 1.00f);
+        colors[(int)ImGuiCol.Header] = new Vector4(0.00f, 0.00f, 0.00f, 0.52f);
+        colors[(int)ImGuiCol.HeaderHovered] = new Vector4(0.00f, 0.00f, 0.00f, 0.36f);
+        colors[(int)ImGuiCol.HeaderActive] = new Vector4(0.20f, 0.22f, 0.23f, 0.33f);
+        colors[(int)ImGuiCol.Separator] = new Vector4(0.28f, 0.28f, 0.28f, 0.29f);
+        colors[(int)ImGuiCol.SeparatorHovered] = new Vector4(0.44f, 0.44f, 0.44f, 0.29f);
+        colors[(int)ImGuiCol.SeparatorActive] = new Vector4(0.40f, 0.44f, 0.47f, 1.00f);
+        colors[(int)ImGuiCol.ResizeGrip] = new Vector4(0.28f, 0.28f, 0.28f, 0.29f);
+        colors[(int)ImGuiCol.ResizeGripHovered] = new Vector4(0.44f, 0.44f, 0.44f, 0.29f);
+        colors[(int)ImGuiCol.ResizeGripActive] = new Vector4(0.40f, 0.44f, 0.47f, 1.00f);
+        colors[(int)ImGuiCol.Tab] = new Vector4(0.00f, 0.00f, 0.00f, 0.52f);
+        colors[(int)ImGuiCol.TabHovered] = new Vector4(0.14f, 0.14f, 0.14f, 1.00f);
+        colors[(int)ImGuiCol.TabActive] = new Vector4(0.20f, 0.20f, 0.20f, 0.36f);
+        colors[(int)ImGuiCol.TabUnfocused] = new Vector4(0.00f, 0.00f, 0.00f, 0.52f);
+        colors[(int)ImGuiCol.TabUnfocusedActive] = new Vector4(0.14f, 0.14f, 0.14f, 1.00f);
+        colors[(int)ImGuiCol.DockingPreview] = new Vector4(0.33f, 0.67f, 0.86f, 1.00f);
+        colors[(int)ImGuiCol.DockingEmptyBg] = new Vector4(1.00f, 0.00f, 0.00f, 1.00f);
+        colors[(int)ImGuiCol.PlotLines] = new Vector4(1.00f, 0.00f, 0.00f, 1.00f);
+        colors[(int)ImGuiCol.PlotLinesHovered] = new Vector4(1.00f, 0.00f, 0.00f, 1.00f);
+        colors[(int)ImGuiCol.PlotHistogram] = new Vector4(1.00f, 0.00f, 0.00f, 1.00f);
+        colors[(int)ImGuiCol.PlotHistogramHovered] = new Vector4(1.00f, 0.00f, 0.00f, 1.00f);
+        colors[(int)ImGuiCol.TableHeaderBg] = new Vector4(0.00f, 0.00f, 0.00f, 0.52f);
+        colors[(int)ImGuiCol.TableBorderStrong] = new Vector4(0.00f, 0.00f, 0.00f, 0.52f);
+        colors[(int)ImGuiCol.TableBorderLight] = new Vector4(0.28f, 0.28f, 0.28f, 0.29f);
+        colors[(int)ImGuiCol.TableRowBg] = new Vector4(0.00f, 0.00f, 0.00f, 0.00f);
+        colors[(int)ImGuiCol.TableRowBgAlt] = new Vector4(1.00f, 1.00f, 1.00f, 0.06f);
+        colors[(int)ImGuiCol.TextSelectedBg] = new Vector4(0.20f, 0.22f, 0.23f, 1.00f);
+        colors[(int)ImGuiCol.DragDropTarget] = new Vector4(0.33f, 0.67f, 0.86f, 1.00f);
+        colors[(int)ImGuiCol.NavHighlight] = new Vector4(1.00f, 0.00f, 0.00f, 1.00f);
+        colors[(int)ImGuiCol.NavWindowingHighlight] = new Vector4(1.00f, 0.00f, 0.00f, 0.70f);
+        colors[(int)ImGuiCol.NavWindowingDimBg] = new Vector4(1.00f, 0.00f, 0.00f, 0.20f);
+        colors[(int)ImGuiCol.ModalWindowDimBg] = new Vector4(1.00f, 0.00f, 0.00f, 0.35f);
 
-    /// <summary>
-    /// Draws a scene graph node
-    /// </summary>
-    private void DrawSceneGraphNode(ISceneObject sceneObject)
-    {
-        sceneObject.UpdateGlobalTransform();
-
-        if (sceneObject.Kind is SceneObjectKind.Group && sceneObject is GroupSceneObject group)
-        {
-            // Iterate children
-            foreach (var child in group.Children)
-            {
-                DrawSceneGraphNode(child);
-            }
-
-            return;
-        }
-
-        if (sceneObject.Kind is SceneObjectKind.Pawn && sceneObject is PawnSceneObject pawn)
-        {
-            // Update transform buffer
-            _commandList!.SetGraphicsResourceSet(0, _resourceSet);
-            _commandList.UpdateBuffer(_modelUniformBuffer, 0, pawn.GlobalTransform.Matrix);
-
-            // Update vertex buffer
-            _commandList.SetVertexBuffer(0, pawn.ModelBuffer.VertexBuffer);
-            _commandList.UpdateBuffer(pawn.ModelBuffer.VertexBuffer, 0, pawn.ModelBuffer.Model.GetVertices());
-
-            // Update index buffer
-            _commandList.SetIndexBuffer(pawn.ModelBuffer.IndexBuffer, IndexFormat.UInt32);
-            _commandList.UpdateBuffer(pawn.ModelBuffer.IndexBuffer, 0, _bunnyProp!.ModelBuffer.Model.GetIndices());
-
-            // Draw
-            _commandList.DrawIndexed(pawn.ModelBuffer.Model.GetIndexCount());
-
-            // Iterate children
-            foreach (var child in pawn.Children)
-            {
-                DrawSceneGraphNode(child);
-            }
-
-            return;
-        }
+        style.WindowPadding = new Vector2(8.00f, 8.00f);
+        style.FramePadding = new Vector2(5.00f, 2.00f);
+        style.CellPadding = new Vector2(6.00f, 6.00f);
+        style.ItemSpacing = new Vector2(6.00f, 6.00f);
+        style.ItemInnerSpacing = new Vector2(6.00f, 6.00f);
+        style.TouchExtraPadding = new Vector2(0.00f, 0.00f);
+        style.IndentSpacing = 25;
+        style.ScrollbarSize = 15;
+        style.GrabMinSize = 10;
+        style.WindowBorderSize = 1;
+        style.ChildBorderSize = 1;
+        style.PopupBorderSize = 1;
+        style.FrameBorderSize = 1;
+        style.TabBorderSize = 1;
+        style.WindowRounding = 7;
+        style.ChildRounding = 4;
+        style.FrameRounding = 3;
+        style.PopupRounding = 4;
+        style.ScrollbarRounding = 9;
+        style.GrabRounding = 3;
+        style.LogSliderDeadzone = 4;
+        style.TabRounding = 4;
     }
 }
