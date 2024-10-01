@@ -1,6 +1,4 @@
-﻿
-using System.Numerics;
-
+﻿using System.Numerics;
 using WeaponZ.Game.Render;
 
 namespace WeaponZ.Game.Scene;

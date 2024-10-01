@@ -222,6 +222,11 @@ public class Program : IInputContext
             treeNodeFlags |= ImGuiTreeNodeFlags.Selected;
         }
 
+        if (sceneObject.Children.Count < 1)
+        {
+            treeNodeFlags |= ImGuiTreeNodeFlags.Leaf;
+        }
+
         bool nodeOpen = ImGui.TreeNodeEx(sceneObject.DisplayName, treeNodeFlags);
 
         if (ImGui.IsItemClicked())
