@@ -51,7 +51,7 @@ public class Renderer
         );
 
         _lightingUniformBuffer = GraphicsDevice.ResourceFactory.CreateBuffer(
-            new BufferDescription(32, BufferUsage.UniformBuffer | BufferUsage.Dynamic)
+            new BufferDescription(8224, BufferUsage.UniformBuffer | BufferUsage.Dynamic)
         );
 
         // Vertex layout descriptions
@@ -118,7 +118,7 @@ public class Renderer
         _commandList.SetPipeline(Pipeline);
 
         UpdateCameraUniforms(activeCamera);
-        UpdateLightUniforms(sceneGraph.FindAllByKind(sceneGraph.Root, SceneObjectKind.Light).Cast<LightSceneObject>());
+        UpdateLightUniforms(activeCamera, sceneGraph.FindAllByKind(sceneGraph.Root, SceneObjectKind.Light).Cast<LightSceneObject>());
     }
 
     public void EndFrame()
@@ -178,16 +178,14 @@ public class Renderer
         _commandList.SetGraphicsResourceSet(0, ResourceSet);
     }
 
-    private void UpdateLightUniforms(IEnumerable<LightSceneObject> lights)
+    private void UpdateLightUniforms(CameraSceneObject activeCamera, IEnumerable<LightSceneObject> lights)
     {
-        if (lights.Count() > 0)
+        if (lights.Any())
         {
-            LightSceneObject light = lights.First();
-            var lightingBuffer = new LightingBuffer
-            {
-                CameraPosition = new Vector4(light.Transform.Position, 1.0f),
-                LightPosition = new Vector4(light.Transform.Position, 1.0f)
-            };
+            LightingBuffer lightingBuffer = new(
+                new Vector4(activeCamera.Camera.Position, 1.0f),
+                lights.Select(l => new PointLight(l.Transform.Position, new Vector3(l.Light.Color.X, l.Light.Color.Y, l.Light.Color.Z))).ToArray()
+            );
 
             _commandList.UpdateBuffer(_lightingUniformBuffer, 0, lightingBuffer);
             _commandList.SetGraphicsResourceSet(0, ResourceSet);

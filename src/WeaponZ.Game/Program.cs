@@ -136,8 +136,11 @@ public class Program : IInputContext
 
         _sceneGraph.AppendTo(_sceneGraph.Root, _mainCamera);
 
-        var light1 = new LightSceneObject("Light 1", new Transform() { Position = new Vector3(0.0f, 0.0f, 3.0f) });
+        var light1 = new LightSceneObject("Light 1", new Transform() { Position = new Vector3(1.4f, 1.0f, 2.0f) }, new Vector3(1.0f));
         _sceneGraph.AppendTo(_sceneGraph.Root, light1);
+
+        var light2 = new LightSceneObject("Light 2", new Transform() { Position = new Vector3(-2.6f, -3.0f, 1.0f) }, new Vector3(0.2f, 0.1f, 0.5f));
+        _sceneGraph.AppendTo(_sceneGraph.Root, light2);
 
         SetupImGuiStyles();
 

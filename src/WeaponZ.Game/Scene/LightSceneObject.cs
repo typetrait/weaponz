@@ -1,4 +1,8 @@
 ﻿
+using System.Numerics;
+
+using WeaponZ.Game.Render;
+
 namespace WeaponZ.Game.Scene;
 
 public class LightSceneObject : ISceneObject
@@ -10,11 +14,15 @@ public class LightSceneObject : ISceneObject
     public ISceneObject? Parent { get; set; }
     public Transform GlobalTransform { get; set; }
 
-    public LightSceneObject(string displayName, Transform transform)
+    public PointLight Light { get; set; }
+
+    public LightSceneObject(string displayName, Transform transform, Vector3 color)
     {
         Children = [];
         DisplayName = displayName;
         Transform = transform;
         GlobalTransform = Transform;
+
+        Light = new PointLight(transform.Position, color);
     }
 }
