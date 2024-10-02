@@ -2,6 +2,8 @@
 using ImGuiNET;
 using Veldrid;
 using Veldrid.StartupUtilities;
+
+using WeaponZ.Game.Editor;
 using WeaponZ.Game.Input;
 using WeaponZ.Game.Models;
 using WeaponZ.Game.Render;
@@ -34,15 +36,13 @@ public class Program : IInputContext
     private PawnSceneObject? _bunnyProp2;
     private Transform? _transform;
 
-    private ISceneObject? _selectedObject = null;
-
-    private int _transformOptionSelection = 0;
-
     public event EventHandler<MouseButtonEventArgs>? MouseButtonPressed;
     public event EventHandler<MouseButtonEventArgs>? MouseButtonReleased;
     public event EventHandler<MouseEventArgs>? MouseMoved;
     public event EventHandler<KeyboardEventArgs>? KeyPressed;
     public event EventHandler<KeyboardEventArgs>? KeyReleased;
+
+    private EditorDebugLayer? _editorDebugLayer;
 
     /// <summary>
     /// Entry point
@@ -128,6 +128,7 @@ public class Program : IInputContext
         var modelBufferFactory = new ModelBufferFactory(_graphicsDevice.ResourceFactory);
         var bunnyModelBuffer = modelBufferFactory.CreateModelBuffer<Vertex>(models.Bunny);
 
+        // Scene Objects
         _bunnyProp = new PawnSceneObject("Bunny", _transform, bunnyModelBuffer);
         _bunnyProp2 = new PawnSceneObject("Bunny 2", transform2, bunnyModelBuffer);
 
@@ -147,6 +148,8 @@ public class Program : IInputContext
         _keyboardState.KeyPressed += (s, e) => KeyPressed?.Invoke(s, e);
         _keyboardState.KeyReleased += (s, e) => KeyReleased?.Invoke(s, e);
 
+        _editorDebugLayer = new EditorDebugLayer(_imGuiRenderer, this, _sceneGraph);
+
         // Main loop
         while (window.Exists)
         {
@@ -154,7 +157,7 @@ public class Program : IInputContext
             _keyboardState.UpdateFromSnapshot(inputSnapshot);
             _mouseState.UpdateFromSnapshot(inputSnapshot);
 
-            _imGuiRenderer.Update((float)deltaTime.TotalSeconds, inputSnapshot);
+            _editorDebugLayer.Update(deltaTime, inputSnapshot);
 
             Draw(deltaTime);
 
@@ -173,6 +176,8 @@ public class Program : IInputContext
             || _sceneGraph is null
             || _transform is null
             || _imGuiRenderer is null
+            || _editorDebugLayer is null
+            || _renderer is null
         )
         {
             throw new InvalidOperationException("Failed to initialize resources.");
@@ -181,117 +186,18 @@ public class Program : IInputContext
         // Update camera
         _orthographicCamera.Update(_keyboardState, _mouseState, deltaTime);
 
-        // Setup ImGui windows
-        SetupSceneGraphUi(_sceneGraph);
-
-        if (_selectedObject is not null)
-        {
-            SetupTransformUi(_selectedObject.Transform);
-        }
-
-        _renderer?.BeginFrame(_mainCamera!, _sceneGraph);
+        _renderer.BeginFrame(_mainCamera!, _sceneGraph);
 
         // Draw Scene
-        _renderer?.DrawSceneGraphNode(_sceneGraph.Root);
+        _renderer.DrawSceneGraphNode(_sceneGraph.Root);
 
-        // Draw ImGui
-        _imGuiRenderer.Render(_graphicsDevice, _renderer?._commandList);
+        // Draw Editor Debug Layer
+        _editorDebugLayer.Draw(_graphicsDevice, _renderer);
 
-        _renderer?.EndFrame();
+        _renderer.EndFrame();
     }
 
-    /// <summary>
-    /// Draws the scene graph ui
-    /// </summary>
-    private void SetupSceneGraphUi(SceneGraph sceneGraph)
-    {
-        ImGui.Begin("Scene Graph");
-
-        DrawSceneGraphUiNode(sceneGraph.Root);
-
-        ImGui.End();
-    }
-
-    /// <summary>
-    /// Draws the scene graph ui nodes
-    /// </summary>
-    private void DrawSceneGraphUiNode(ISceneObject sceneObject)
-    {
-        if (sceneObject is null) return;
-
-        var treeNodeFlags = ImGuiTreeNodeFlags.OpenOnArrow;
-        if (_selectedObject == sceneObject)
-        {
-            treeNodeFlags |= ImGuiTreeNodeFlags.Selected;
-        }
-
-        if (sceneObject.Children.Count < 1)
-        {
-            treeNodeFlags |= ImGuiTreeNodeFlags.Leaf;
-        }
-
-        bool nodeOpen = ImGui.TreeNodeEx(sceneObject.DisplayName, treeNodeFlags);
-
-        if (ImGui.IsItemClicked())
-        {
-            _selectedObject = sceneObject;
-        }
-
-        if (nodeOpen)
-        {
-            foreach (var child in sceneObject.Children)
-            {
-                DrawSceneGraphUiNode(child);
-            }
-            ImGui.TreePop();
-        }
-    }
-
-
-    /// <summary>
-    /// Draws the transform UI
-    /// </summary>
-    private void SetupTransformUi(Transform transform)
-    {
-        ImGui.Begin("Scene Object");
-
-        Transform t = _transformOptionSelection == 0 ? _selectedObject!.GlobalTransform : _selectedObject!.Transform;
-
-        ImGui.Text($"{_selectedObject?.DisplayName} [{_selectedObject?.Kind}]");
-
-        ImGui.Separator();
-
-        if (ImGui.TreeNodeEx("Transform"))
-        {
-            if (ImGui.TreeNodeEx("Position", ImGuiTreeNodeFlags.DefaultOpen))
-            {
-                ImGui.DragFloat3("", ref t.Position);
-                ImGui.TreePop();
-            }
-
-            if (ImGui.TreeNodeEx("Rotation", ImGuiTreeNodeFlags.DefaultOpen))
-            {
-                ImGui.DragFloat3("", ref t.Rotation, 0.02f);
-                ImGui.TreePop();
-            }
-
-            if (ImGui.TreeNodeEx("Scale", ImGuiTreeNodeFlags.DefaultOpen))
-            {
-                ImGui.DragFloat3("", ref t.Scale, 0.0002f);
-                ImGui.TreePop();
-            }
-
-            ImGui.RadioButton("Global", ref _transformOptionSelection, 0);
-            ImGui.SameLine();
-            ImGui.RadioButton("Local", ref _transformOptionSelection, 1);
-
-            ImGui.TreePop();
-        }
-
-        ImGui.End();
-    }
-
-    public static void SetupImGuiStyles()
+    private static void SetupImGuiStyles()
     {
         ImGuiStylePtr style = ImGui.GetStyle();
         var colors = style.Colors;
