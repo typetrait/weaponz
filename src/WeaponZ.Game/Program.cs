@@ -41,8 +41,8 @@ public class Program : IInputContext
     public event EventHandler<MouseButtonEventArgs>? MouseButtonPressed;
     public event EventHandler<MouseButtonEventArgs>? MouseButtonReleased;
     public event EventHandler<MouseEventArgs>? MouseMoved;
-    public event EventHandler? KeyPressed;
-    public event EventHandler? KeyReleased;
+    public event EventHandler<KeyboardEventArgs>? KeyPressed;
+    public event EventHandler<KeyboardEventArgs>? KeyReleased;
 
     /// <summary>
     /// Entry point
@@ -94,7 +94,7 @@ public class Program : IInputContext
 
         _renderer = new Renderer(_graphicsDevice);
 
-        // Imgui
+        // ImGui
         _imGuiRenderer = new ImGuiRenderer(_graphicsDevice, _renderer.PipelineOutput, window.Width, window.Height);
 
         // Camera
@@ -143,6 +143,9 @@ public class Program : IInputContext
         _sceneGraph.AppendTo(_sceneGraph.Root, light2);
 
         SetupImGuiStyles();
+
+        _keyboardState.KeyPressed += (s, e) => KeyPressed?.Invoke(s, e);
+        _keyboardState.KeyReleased += (s, e) => KeyReleased?.Invoke(s, e);
 
         // Main loop
         while (window.Exists)
@@ -246,7 +249,7 @@ public class Program : IInputContext
 
 
     /// <summary>
-    /// Draws the transform ui
+    /// Draws the transform UI
     /// </summary>
     private void SetupTransformUi(Transform transform)
     {

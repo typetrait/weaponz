@@ -1,10 +1,14 @@
-﻿using Veldrid;
+﻿
+using Veldrid;
 
 namespace WeaponZ.Game.Input;
 
-public class KeyboardState
+public class KeyboardState : IKeyboardInputContext
 {
     private readonly Dictionary<Key, bool> _pressedStates;
+
+    public event EventHandler<KeyboardEventArgs>? KeyPressed;
+    public event EventHandler<KeyboardEventArgs>? KeyReleased;
 
     public KeyboardState()
     {
@@ -21,10 +25,12 @@ public class KeyboardState
             if (keyEvent.Down)
             {
                 _pressedStates[key] = true;
+                KeyPressed?.Invoke(this, new KeyboardEventArgs(key, keyEvent.Repeat));
             }
             else if (isDown)
             {
                 _pressedStates[key] = false;
+                KeyReleased?.Invoke(this, new KeyboardEventArgs(key, keyEvent.Repeat));
             }
         }
     }

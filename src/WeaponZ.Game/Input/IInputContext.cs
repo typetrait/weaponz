@@ -2,13 +2,21 @@
 
 namespace WeaponZ.Game.Input;
 
-public interface IInputContext
+public interface IKeyboardInputContext
 {
-    event EventHandler<MouseButtonEventArgs> MouseButtonPressed;
-    event EventHandler<MouseButtonEventArgs> MouseButtonReleased;
-    event EventHandler<MouseEventArgs> MouseMoved;
-    event EventHandler KeyPressed;
-    event EventHandler KeyReleased;
+    event EventHandler<KeyboardEventArgs>? KeyPressed;
+    event EventHandler<KeyboardEventArgs>? KeyReleased;
+}
+
+public interface IMouseInputContext
+{
+    event EventHandler<MouseButtonEventArgs>? MouseButtonPressed;
+    event EventHandler<MouseButtonEventArgs>? MouseButtonReleased;
+    event EventHandler<MouseEventArgs>? MouseMoved;
+}
+
+public interface IInputContext : IKeyboardInputContext, IMouseInputContext
+{
 }
 
 public class MouseEventArgs(float x, float y) : EventArgs
@@ -22,7 +30,8 @@ public class MouseButtonEventArgs(float x, float y, MouseButton button) : MouseE
     public readonly MouseButton Button = button;
 }
 
-public class KeyboardEventArgs(Key key) : EventArgs
+public class KeyboardEventArgs(Key key, bool isRepeatingEvent) : EventArgs
 {
     public readonly Key Key = key;
+    public readonly bool IsRepeatingEvent = isRepeatingEvent;
 }

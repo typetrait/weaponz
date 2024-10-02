@@ -1,4 +1,5 @@
-﻿using WeaponZ.Game.Input;
+﻿using Veldrid;
+using WeaponZ.Game.Input;
 using WeaponZ.Game.Render;
 
 namespace WeaponZ.Game.Scene;
@@ -16,6 +17,8 @@ public class CameraSceneObject : ISceneObject
 
     private readonly IInputContext _inputContext;
 
+    private const Key DoSomethingKeyBind = Key.F;
+
     public CameraSceneObject(string displayName, Transform transform, OrthographicCamera camera, IInputContext inputContext)
     {
         Children = [];
@@ -26,12 +29,24 @@ public class CameraSceneObject : ISceneObject
         Camera = camera;
         _inputContext = inputContext;
 
+        _inputContext.KeyPressed += OnKeyPressed;
         _inputContext.MouseButtonPressed += OnMouseButtonPressed;
+    }
+
+    private void OnKeyPressed(object? sender, KeyboardEventArgs e)
+    {
+        if (!e.IsRepeatingEvent)
+        {
+            if (e.Key is DoSomethingKeyBind)
+            {
+                Console.WriteLine("Did something...");
+            }
+        }
     }
 
     private void OnMouseButtonPressed(object? sender, MouseButtonEventArgs e)
     {
-        if (e.Button is Veldrid.MouseButton.Left)
+        if (e.Button is MouseButton.Left)
         {
             Console.WriteLine($"Mouse clicked at: X = {e.X}; Y = {e.Y}");
         }
