@@ -23,6 +23,10 @@ public class SceneGraph
 
     public void Update(ISceneObject root, TimeSpan deltaTime)
     {
+        if (root is null) return;
+
+        root.Update(deltaTime);
+
         if (root.Children is not null)
         {
             foreach (ISceneObject child in root.Children)

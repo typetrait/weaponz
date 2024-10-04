@@ -173,7 +173,7 @@ public class Renderer
         {
             LightingBuffer lightingBuffer = new(
                 new Vector4(activeCamera.Camera.Position, 1.0f),
-                lights.Select(l => new PointLight(l.Transform.Position, new Vector3(l.Light.Color.X, l.Light.Color.Y, l.Light.Color.Z))).ToArray()
+                lights.Select(l => new PointLight(l.GlobalTransform.Position, new Vector3(l.Light.Color.X, l.Light.Color.Y, l.Light.Color.Z))).ToArray()
             );
 
             _commandList.UpdateBuffer(_lightingUniformBuffer, 0, lightingBuffer);

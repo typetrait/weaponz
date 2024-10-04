@@ -6,7 +6,7 @@ namespace WeaponZ.Game.Scene;
 public class LightSceneObject : ISceneObject
 {
     public string DisplayName { get; }
-    public Transform Transform { get; private set; }
+    public Transform Transform { get; }
     public IList<ISceneObject> Children { get; }
     public SceneObjectKind Kind => SceneObjectKind.Light;
     public ISceneObject? Parent { get; set; }
@@ -26,13 +26,6 @@ public class LightSceneObject : ISceneObject
 
     public void Update(TimeSpan deltaTime)
     {
-        Transform = new()
-        {
-            Position = new Vector3(
-                Light.Position.X,
-                Light.Position.Y,
-                Light.Position.Z
-            )
-        };
+        Light = new PointLight(GlobalTransform.Position, new Vector3(Light.Color.X, Light.Color.Y, Light.Color.Z));
     }
 }
