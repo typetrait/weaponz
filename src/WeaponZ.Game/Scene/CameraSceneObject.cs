@@ -1,4 +1,6 @@
-﻿using Veldrid;
+﻿using System.Numerics;
+
+using Veldrid;
 using WeaponZ.Game.Input;
 using WeaponZ.Game.Render;
 
@@ -31,6 +33,11 @@ public class CameraSceneObject : ISceneObject
 
         _inputContext.KeyPressed += OnKeyPressed;
         _inputContext.MouseButtonPressed += OnMouseButtonPressed;
+    }
+
+    public void Update(TimeSpan deltaTime)
+    {
+        // Camera.Position = Transform.Position;
     }
 
     private void OnKeyPressed(object? sender, KeyboardEventArgs e)

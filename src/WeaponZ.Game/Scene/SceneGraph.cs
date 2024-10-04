@@ -1,4 +1,6 @@
-﻿namespace WeaponZ.Game.Scene;
+﻿using System.Numerics;
+
+namespace WeaponZ.Game.Scene;
 
 public class SceneGraph
 {
@@ -19,19 +21,45 @@ public class SceneGraph
         _sceneObjects[_sceneObjects.Count - 1] = sceneObject;
     }
 
-    public IEnumerable<ISceneObject> FindAllByKind(ISceneObject root, SceneObjectKind kind)
+    public void Update(ISceneObject root, TimeSpan deltaTime)
     {
-        IList<ISceneObject> children = root.Children;
-
-        if (children is not null)
+        if (root.Children is not null)
         {
-            foreach (ISceneObject child in children)
+            foreach (ISceneObject child in root.Children)
             {
-                if (child.Kind == kind)
+                Update(child, deltaTime);
+            }
+        }
+    }
+
+    public static IEnumerable<ISceneObject> FindAllByKind(ISceneObject root, SceneObjectKind kind)
+    {
+        if (root.Kind == kind)
+        {
+            yield return root;
+        }
+
+        if (root.Children is not null)
+        {
+            foreach (ISceneObject child in root.Children)
+            {
+                foreach (ISceneObject descendant in FindAllByKind(child, kind))
                 {
-                    yield return child;
+                    yield return descendant;
                 }
             }
         }
+    }
+
+    public void CreateLight(ISceneObject parent)
+    {
+        AppendTo(
+            parent,
+            new LightSceneObject(
+                $"Light {FindAllByKind(Root, SceneObjectKind.Light).Count() + 1}", // TODO: Obviously horrendous, fix this and every other instance of this later
+                new Transform(),
+                new Vector3(1.0f)
+            )
+        );
     }
 }

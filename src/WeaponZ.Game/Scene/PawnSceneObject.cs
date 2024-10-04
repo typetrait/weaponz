@@ -21,4 +21,9 @@ public class PawnSceneObject : ISceneObject
         GlobalTransform = Transform;
         ModelBuffer = modelBuffer;
     }
+
+    public void Update(TimeSpan deltaTime)
+    {
+
+    }
 }

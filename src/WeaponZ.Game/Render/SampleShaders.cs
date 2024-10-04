@@ -6,7 +6,8 @@ namespace WeaponZ.Game.Render;
 
 public class SampleShaders
 {
-    public Shader[] ShaderGroup1;
+    public readonly Shader[] ShaderGroup1;
+    public readonly Shader[] LineShaderGroup;
 
     public SampleShaders(ResourceFactory resourceFactory)
     {
@@ -17,5 +18,15 @@ public class SampleShaders
         var shader1FragmentShader = ShaderLoader.Load(shader1FragmentShaderPath, ShaderStages.Fragment);
 
         ShaderGroup1 = resourceFactory.CreateFromSpirv(shader1VertexShader, shader1FragmentShader);
+
+        // ---
+
+        var lineVertexShaderPath = $"{Config.AssetsPath}/Shaders/line.vertex.glsl";
+        var lineFragmentShaderPath = $"{Config.AssetsPath}/Shaders/line.fragment.glsl";
+
+        var lineVertexShader = ShaderLoader.Load(lineVertexShaderPath, ShaderStages.Vertex);
+        var lineFragmentShader = ShaderLoader.Load(lineFragmentShaderPath, ShaderStages.Fragment);
+
+        LineShaderGroup = resourceFactory.CreateFromSpirv(lineVertexShader, lineFragmentShader);
     }
 }

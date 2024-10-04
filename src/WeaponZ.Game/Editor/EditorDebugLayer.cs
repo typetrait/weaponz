@@ -20,7 +20,7 @@ public class EditorDebugLayer
     private ISceneObject? _selectedObject = null;
     private int _transformOptionSelection = 0;
 
-    private const Key ToggleVisibility = Key.V;
+    private const Key ToggleVisibility = Key.H;
 
     private bool _isVisible = true;
 
@@ -82,7 +82,12 @@ public class EditorDebugLayer
         {
             ImGui.Selectable("Pawn");
             ImGui.Selectable("Camera");
-            ImGui.Selectable("Light");
+
+            if (ImGui.Selectable("Light"))
+            {
+                ISceneObject parent = _selectedObject is null ? _sceneGraph.Root : _selectedObject;
+                _sceneGraph.CreateLight(parent);
+            }
 
             ImGui.EndPopup();
         }

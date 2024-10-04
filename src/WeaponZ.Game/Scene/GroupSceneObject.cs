@@ -16,4 +16,9 @@ public class GroupSceneObject : ISceneObject
         Transform = new Transform();
         GlobalTransform = Transform;
     }
+
+    public void Update(TimeSpan deltaTime)
+    {
+
+    }
 }

@@ -30,18 +30,16 @@ public class Program : IInputContext
     private KeyboardState? _keyboardState;
     private MouseState? _mouseState;
 
-    // Scene
-    private SceneGraph? _sceneGraph;
-    private PawnSceneObject? _bunnyProp;
-    private PawnSceneObject? _bunnyProp2;
-    private Transform? _transform;
-
     public event EventHandler<MouseButtonEventArgs>? MouseButtonPressed;
     public event EventHandler<MouseButtonEventArgs>? MouseButtonReleased;
     public event EventHandler<MouseEventArgs>? MouseMoved;
     public event EventHandler<KeyboardEventArgs>? KeyPressed;
     public event EventHandler<KeyboardEventArgs>? KeyReleased;
 
+    // Scene
+    private SceneGraph? _sceneGraph;
+
+    // Editor Debug Layer
     private EditorDebugLayer? _editorDebugLayer;
 
     /// <summary>
@@ -120,7 +118,7 @@ public class Program : IInputContext
         _sceneGraph = new SceneGraph(rootNode);
 
         // Models
-        _transform = new Transform() { Scale = new Vector3(0.002f) };
+        var transform = new Transform() { Scale = new Vector3(0.002f) };
         var transform2 = new Transform() { Scale = new Vector3(0.001f) };
         transform2.TranslateY(400.0f);
 
@@ -129,11 +127,11 @@ public class Program : IInputContext
         var bunnyModelBuffer = modelBufferFactory.CreateModelBuffer<Vertex>(models.Bunny);
 
         // Scene Objects
-        _bunnyProp = new PawnSceneObject("Bunny", _transform, bunnyModelBuffer);
-        _bunnyProp2 = new PawnSceneObject("Bunny 2", transform2, bunnyModelBuffer);
+        var bunnyProp = new PawnSceneObject("Bunny", transform, bunnyModelBuffer);
+        var bunnyProp2 = new PawnSceneObject("Bunny 2", transform2, bunnyModelBuffer);
 
-        _sceneGraph.AppendTo(_sceneGraph.Root, _bunnyProp);
-        _sceneGraph.AppendTo(_sceneGraph.Root.Children[0], _bunnyProp2);
+        _sceneGraph.AppendTo(_sceneGraph.Root, bunnyProp);
+        _sceneGraph.AppendTo(_sceneGraph.Root.Children[0], bunnyProp2);
 
         _sceneGraph.AppendTo(_sceneGraph.Root, _mainCamera);
 
@@ -157,7 +155,11 @@ public class Program : IInputContext
             _keyboardState.UpdateFromSnapshot(inputSnapshot);
             _mouseState.UpdateFromSnapshot(inputSnapshot);
 
+            // Update camera
+            _orthographicCamera.Update(_keyboardState, _mouseState, deltaTime);
+
             _editorDebugLayer.Update(deltaTime, inputSnapshot);
+            _sceneGraph.Update(_sceneGraph.Root, deltaTime);
 
             Draw(deltaTime);
 
@@ -174,7 +176,6 @@ public class Program : IInputContext
             || _keyboardState is null
             || _mouseState is null
             || _sceneGraph is null
-            || _transform is null
             || _imGuiRenderer is null
             || _editorDebugLayer is null
             || _renderer is null
@@ -183,17 +184,9 @@ public class Program : IInputContext
             throw new InvalidOperationException("Failed to initialize resources.");
         }
 
-        // Update camera
-        _orthographicCamera.Update(_keyboardState, _mouseState, deltaTime);
-
         _renderer.BeginFrame(_mainCamera!, _sceneGraph);
-
-        // Draw Scene
         _renderer.DrawSceneGraphNode(_sceneGraph.Root);
-
-        // Draw Editor Debug Layer
         _editorDebugLayer.Draw(_graphicsDevice, _renderer);
-
         _renderer.EndFrame();
     }
 

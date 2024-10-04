@@ -10,7 +10,7 @@ public class OrthographicCamera
 
     public float ZNear { get; private set; }
     public float ZFar { get; private set; }
-    public Vector3 Position { get; private set; }
+    public Vector3 Position { get; set; }
 
     public Matrix4x4 Projection { get; private set; }
     public Matrix4x4 View { get; private set; }

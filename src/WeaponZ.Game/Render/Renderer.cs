@@ -55,18 +55,7 @@ public class Renderer
         );
 
         // Vertex layout descriptions
-        var vertexLayoutDescription = new VertexLayoutDescription(
-            new VertexElementDescription(
-                "Position",
-                VertexElementFormat.Float3,
-                VertexElementSemantic.TextureCoordinate
-            ),
-            new VertexElementDescription( //
-                "Normal",
-                VertexElementFormat.Float3,
-                VertexElementSemantic.TextureCoordinate
-            )
-        );
+        VertexLayoutDescription vertexLayoutDescription = Vertex.GetLayout();
 
         // Shaders
         var sampleShaders = new SampleShaders(GraphicsDevice.ResourceFactory);
@@ -118,7 +107,7 @@ public class Renderer
         _commandList.SetPipeline(Pipeline);
 
         UpdateCameraUniforms(activeCamera);
-        UpdateLightUniforms(activeCamera, sceneGraph.FindAllByKind(sceneGraph.Root, SceneObjectKind.Light).Cast<LightSceneObject>());
+        UpdateLightUniforms(activeCamera, SceneGraph.FindAllByKind(sceneGraph.Root, SceneObjectKind.Light).Cast<LightSceneObject>());
     }
 
     public void EndFrame()
@@ -190,5 +179,10 @@ public class Renderer
             _commandList.UpdateBuffer(_lightingUniformBuffer, 0, lightingBuffer);
             _commandList.SetGraphicsResourceSet(0, ResourceSet);
         }
+    }
+
+    private Pipeline CreatePipeline()
+    {
+        return null!;
     }
 }

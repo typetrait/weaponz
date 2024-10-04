@@ -12,6 +12,8 @@ public interface ISceneObject
 
     Transform GlobalTransform { get; set; }
 
+    void Update(TimeSpan deltaTime);
+
     void UpdateGlobalTransform()
     {
         if (Parent is null)
