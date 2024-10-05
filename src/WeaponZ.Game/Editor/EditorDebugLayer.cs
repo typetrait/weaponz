@@ -149,7 +149,7 @@ public class EditorDebugLayer
         {
             if (ImGui.TreeNodeEx("Position", ImGuiTreeNodeFlags.DefaultOpen))
             {
-                ImGui.DragFloat3("", ref t.Position);
+                ImGui.DragFloat3("", ref t.Position, 0.02f);
                 ImGui.TreePop();
             }
 

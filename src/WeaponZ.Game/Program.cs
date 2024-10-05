@@ -120,7 +120,7 @@ public class Program : IInputContext
         // Models
         var transform = new Transform() { Scale = new Vector3(0.002f) };
         var transform2 = new Transform() { Scale = new Vector3(0.001f) };
-        transform2.TranslateY(400.0f);
+        transform2.TranslateY(1.0f);
 
         var models = new SampleModels();
         var modelBufferFactory = new ModelBufferFactory(_graphicsDevice.ResourceFactory);
@@ -200,6 +200,30 @@ public class Program : IInputContext
                 pawn.GlobalTransform.Position,
                 new Vector3(1.0f, 0.0f, 0.0f)
             );
+        }
+
+        foreach (var light in SceneGraph.FindAllByKind(_sceneGraph.Root, SceneObjectKind.Light))
+        {
+            if (light is LightSceneObject lso && lso is not null)
+            {
+                _renderer.DrawLine(
+                    new Vector3(light.GlobalTransform.Position.X - 0.15f, light.GlobalTransform.Position.Y, light.GlobalTransform.Position.Z),
+                    new Vector3(light.GlobalTransform.Position.X + 0.15f, light.GlobalTransform.Position.Y, light.GlobalTransform.Position.Z),
+                    new Vector3(1.0f, 1.0f, 1.0f)
+                );
+
+                _renderer.DrawLine(
+                    new Vector3(light.GlobalTransform.Position.X, light.GlobalTransform.Position.Y - 0.15f, light.GlobalTransform.Position.Z),
+                    new Vector3(light.GlobalTransform.Position.X, light.GlobalTransform.Position.Y + 0.15f, light.GlobalTransform.Position.Z),
+                    new Vector3(1.0f, 1.0f, 1.0f)
+                );
+
+                _renderer.DrawLine(
+                    new Vector3(light.GlobalTransform.Position.X, light.GlobalTransform.Position.Y, light.GlobalTransform.Position.Z - 0.15f),
+                    new Vector3(light.GlobalTransform.Position.X, light.GlobalTransform.Position.Y, light.GlobalTransform.Position.Z + 0.15f),
+                    new Vector3(1.0f, 1.0f, 1.0f)
+                );
+            }
         }
 
         _renderer.EndDebugFrame();
