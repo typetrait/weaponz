@@ -203,14 +203,14 @@ public class Program : IInputContext
         // Debug
         _renderer.BeginDebugFrame(_mainCamera);
 
-        foreach (var pawn in SceneGraph.FindAllByKind(_sceneGraph.Root, SceneObjectKind.Pawn))
-        {
-            _renderer.DrawLine(
-                _perspectiveCamera.Position + _perspectiveCamera.Forward,
-                pawn.GlobalTransform.Position,
-                new Vector3(1.0f, 0.0f, 0.0f)
-            );
-        }
+        //foreach (var pawn in SceneGraph.FindAllByKind(_sceneGraph.Root, SceneObjectKind.Pawn))
+        //{
+        //    _renderer.DrawLine(
+        //        _perspectiveCamera.Position + _perspectiveCamera.Forward,
+        //        pawn.GlobalTransform.Position,
+        //        new Vector3(1.0f, 0.0f, 0.0f)
+        //    );
+        //}
 
         foreach (var light in SceneGraph.FindAllByKind(_sceneGraph.Root, SceneObjectKind.Light))
         {

@@ -22,8 +22,14 @@ public class CameraSceneObject : ISceneObject
     private const Key DoSomethingKeyBind = Key.F;
 
     // Input stuff should be in a controller abstraction
-    private bool _isDragging = false;
     private Vector2 _dragStartPosition;
+
+    private readonly Dictionary<MouseButton, bool> _draggingInputs = new()
+    {
+        {MouseButton.Left, false},
+        {MouseButton.Middle, false},
+        {MouseButton.Right, false},
+    };
 
     private float _yaw = 0f;
     private float _pitch = 0f;
@@ -65,25 +71,28 @@ public class CameraSceneObject : ISceneObject
 
     private void OnMouseButtonPressed(object? sender, MouseButtonEventArgs e)
     {
-        if (e.Button is MouseButton.Left)
+        // Reset every other input's dragging state
+        foreach (var input in _draggingInputs)
         {
-            _isDragging = true;
-            _dragStartPosition = new Vector2(e.X, e.Y);
+            if (input.Key != e.Button)
+            {
+                _draggingInputs[input.Key] = false;
+            }
         }
+
+        _draggingInputs[e.Button] = true;
+        _dragStartPosition = new Vector2(e.X, e.Y);
     }
 
     private void OnMouseButtonReleased(object? sender, MouseButtonEventArgs e)
     {
-        if (e.Button is MouseButton.Left)
-        {
-            _isDragging = false;
-            _dragStartPosition = new Vector2();
-        }
+        _draggingInputs[e.Button] = false;
+        _dragStartPosition = new Vector2();
     }
 
     private void OnMouseMoved(object? sender, MouseEventArgs e)
     {
-        if (_isDragging)
+        if (_draggingInputs[MouseButton.Left])
         {
             Vector2 mousePosition = new(e.X, e.Y);
             Vector2 dragDelta = mousePosition - _dragStartPosition;
@@ -98,6 +107,29 @@ public class CameraSceneObject : ISceneObject
             Camera.Forward = Vector3.Normalize(Vector3.Transform(-Vector3.UnitZ, rotationMatrix));
             Camera.Right = Vector3.Normalize(Vector3.Cross(Camera.Forward, Vector3.UnitY));
             Camera.Up = Vector3.Cross(Camera.Right, Camera.Forward);
+
+            _dragStartPosition = mousePosition;
+
+            Camera.UpdateViewMatrix();
+        }
+        else if (_draggingInputs[MouseButton.Middle])
+        {
+            Vector2 mousePosition = new(e.X, e.Y);
+            Vector2 dragDelta = mousePosition - _dragStartPosition;
+
+            Camera.Position += -Camera.Right * dragDelta.X * DragSensitivity;
+            Camera.Position += Camera.Up * dragDelta.Y * DragSensitivity;
+
+            _dragStartPosition = mousePosition;
+
+            Camera.UpdateViewMatrix();
+        }
+        else if (_draggingInputs[MouseButton.Right])
+        {
+            Vector2 mousePosition = new(e.X, e.Y);
+            Vector2 dragDelta = mousePosition - _dragStartPosition;
+
+            Camera.Position += -Camera.Forward * dragDelta.Y * DragSensitivity;
 
             _dragStartPosition = mousePosition;
 
