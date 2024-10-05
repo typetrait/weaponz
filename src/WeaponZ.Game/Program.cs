@@ -23,7 +23,7 @@ public class Program : IInputContext
     private ImGuiRenderer? _imGuiRenderer;
 
     // Camera
-    private OrthographicCamera? _orthographicCamera;
+    private PerspectiveCamera? _perspectiveCamera;
     private CameraSceneObject? _mainCamera;
 
     // Input
@@ -96,14 +96,14 @@ public class Program : IInputContext
         _imGuiRenderer = new ImGuiRenderer(_graphicsDevice, _renderer.PipelineOutput, window.Width, window.Height);
 
         // Camera
-        _orthographicCamera = new OrthographicCamera(
+        _perspectiveCamera = new PerspectiveCamera(
             windowCreateInfo.WindowWidth,
             windowCreateInfo.WindowHeight,
             0.1f,
             100.0f,
             new Vector3(0.0f, 0.0f, 3.0f)
         );
-        _mainCamera = new CameraSceneObject("Default Camera", new Transform(), _orthographicCamera, this);
+        _mainCamera = new CameraSceneObject("Default Camera", new Transform(), _perspectiveCamera, this);
 
         // Inputs
         _keyboardState = new KeyboardState();
@@ -126,12 +126,18 @@ public class Program : IInputContext
         var modelBufferFactory = new ModelBufferFactory(_graphicsDevice.ResourceFactory);
         var bunnyModelBuffer = modelBufferFactory.CreateModelBuffer<Vertex>(models.Bunny);
 
+       // var spongaModelBuffer = modelBufferFactory.CreateModelBuffer<Vertex>(models.Sponga);
+
         // Scene Objects
         var bunnyProp = new PawnSceneObject("Bunny", transform, bunnyModelBuffer);
         var bunnyProp2 = new PawnSceneObject("Bunny 2", transform2, bunnyModelBuffer);
 
+        //var sponga = new PawnSceneObject("Sponga", new Transform(), spongaModelBuffer);
+
         _sceneGraph.AppendTo(_sceneGraph.Root, bunnyProp);
         _sceneGraph.AppendTo(_sceneGraph.Root.Children[0], bunnyProp2);
+
+        //_sceneGraph.AppendTo(_sceneGraph.Root, sponga);
 
         _sceneGraph.AppendTo(_sceneGraph.Root, _mainCamera);
 
@@ -146,6 +152,10 @@ public class Program : IInputContext
         _keyboardState.KeyPressed += (s, e) => KeyPressed?.Invoke(s, e);
         _keyboardState.KeyReleased += (s, e) => KeyReleased?.Invoke(s, e);
 
+        _mouseState.MouseButtonPressed += (s, e) => MouseButtonPressed?.Invoke(s, e);
+        _mouseState.MouseButtonReleased += (s, e) => MouseButtonReleased?.Invoke(s, e);
+        _mouseState.MouseMoved += (s, e) => MouseMoved?.Invoke(s, e);
+
         _editorDebugLayer = new EditorDebugLayer(_imGuiRenderer, this, _sceneGraph);
 
         // Main loop
@@ -156,7 +166,7 @@ public class Program : IInputContext
             _mouseState.UpdateFromSnapshot(inputSnapshot);
 
             // Update camera
-            _orthographicCamera.Update(_keyboardState, _mouseState, deltaTime);
+            _perspectiveCamera.Update(_keyboardState, _mouseState, deltaTime);
 
             _editorDebugLayer.Update(deltaTime, inputSnapshot);
             _sceneGraph.Update(_sceneGraph.Root, deltaTime);
@@ -172,7 +182,7 @@ public class Program : IInputContext
     {
         // Validate resources
         if (_graphicsDevice is null
-            || _orthographicCamera is null
+            || _perspectiveCamera is null
             || _mainCamera is null
             || _keyboardState is null
             || _mouseState is null
@@ -196,7 +206,7 @@ public class Program : IInputContext
         foreach (var pawn in SceneGraph.FindAllByKind(_sceneGraph.Root, SceneObjectKind.Pawn))
         {
             _renderer.DrawLine(
-                _orthographicCamera.Position,
+                _perspectiveCamera.Position + _perspectiveCamera.Forward,
                 pawn.GlobalTransform.Position,
                 new Vector3(1.0f, 0.0f, 0.0f)
             );

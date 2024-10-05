@@ -3,7 +3,7 @@ using WeaponZ.Game.Input;
 
 namespace WeaponZ.Game.Render;
 
-public class OrthographicCamera
+public class PerspectiveCamera
 {
     public float BaseSpeed { get; set; } = 3.5f;
     public float SpeedModifier { get; set; } = 2.5f;
@@ -17,11 +17,11 @@ public class OrthographicCamera
 
     public ViewProjectionMatrix ViewProjection { get; private set; }
 
-    public Vector3 Up { get; private set; }
-    public Vector3 Forward { get; private set; }
-    public Vector3 Right { get; private set; }
+    public Vector3 Up { get; set; }
+    public Vector3 Forward { get; set; }
+    public Vector3 Right { get; set; }
 
-    public OrthographicCamera(float width, float height, float zNear, float zFar, Vector3 position)
+    public PerspectiveCamera(float width, float height, float zNear, float zFar, Vector3 position)
     {
         ZNear = zNear;
         ZFar = zFar;
@@ -37,7 +37,7 @@ public class OrthographicCamera
         ViewProjection = new ViewProjectionMatrix(View, Projection);
 
         Right = Vector3.Cross(Up, Forward);
-        Up = Vector3.Cross(Forward, Right);
+        //Up = Vector3.Cross(Forward, Right);
     }
 
     public void Update(KeyboardState keyboard, MouseState mouse, TimeSpan dt)
@@ -57,7 +57,7 @@ public class OrthographicCamera
 
         if (keyboard.IsKeyDown(Veldrid.Key.A))
         {
-            translation += Right * speed;
+            translation += -Right * speed;
         }
 
         if (keyboard.IsKeyDown(Veldrid.Key.S))
@@ -67,7 +67,7 @@ public class OrthographicCamera
 
         if (keyboard.IsKeyDown(Veldrid.Key.D))
         {
-            translation += -Right * speed;
+            translation += Right * speed;
         }
 
         if (keyboard.IsKeyDown(Veldrid.Key.Space))
@@ -84,8 +84,12 @@ public class OrthographicCamera
         UpdateViewMatrix();
     }
 
-    private void UpdateViewMatrix()
+    public void UpdateViewMatrix()
     {
+        Forward = Vector3.Normalize(Forward);
+        Right = Vector3.Normalize(Vector3.Cross(Forward, Vector3.UnitY));
+        Up = Vector3.Cross(Right, Forward);
+
         View = Matrix4x4.CreateLookAt(Position, Position + Forward, Up);
         ViewProjection = new ViewProjectionMatrix(View, Projection);
     }
@@ -94,7 +98,7 @@ public class OrthographicCamera
 public struct ViewProjectionMatrix(Matrix4x4 view, Matrix4x4 projection)
 {
     public Matrix4x4 View = view;
-    public Matrix4x4 Projecion = projection;
+    public Matrix4x4 Projection = projection;
 
     public const uint SizeInBytes = 128;
 }

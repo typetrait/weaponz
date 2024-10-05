@@ -15,13 +15,22 @@ public class CameraSceneObject : ISceneObject
     public ISceneObject? Parent { get; set; }
     public Transform GlobalTransform { get; set; }
 
-    public OrthographicCamera Camera { get; }
+    public PerspectiveCamera Camera { get; }
 
     private readonly IInputContext _inputContext;
 
     private const Key DoSomethingKeyBind = Key.F;
 
-    public CameraSceneObject(string displayName, Transform transform, OrthographicCamera camera, IInputContext inputContext)
+    // Input stuff should be in a controller abstraction
+    private bool _isDragging = false;
+    private Vector2 _dragStartPosition;
+
+    private float _yaw = 0f;
+    private float _pitch = 0f;
+
+    private const float DragSensitivity = 0.002f;
+
+    public CameraSceneObject(string displayName, Transform transform, PerspectiveCamera camera, IInputContext inputContext)
     {
         Children = [];
         DisplayName = displayName;
@@ -32,7 +41,10 @@ public class CameraSceneObject : ISceneObject
         _inputContext = inputContext;
 
         _inputContext.KeyPressed += OnKeyPressed;
+
         _inputContext.MouseButtonPressed += OnMouseButtonPressed;
+        _inputContext.MouseButtonReleased += OnMouseButtonReleased;
+        _inputContext.MouseMoved += OnMouseMoved;
     }
 
     public void Update(TimeSpan deltaTime)
@@ -55,7 +67,41 @@ public class CameraSceneObject : ISceneObject
     {
         if (e.Button is MouseButton.Left)
         {
-            Console.WriteLine($"Mouse clicked at: X = {e.X}; Y = {e.Y}");
+            _isDragging = true;
+            _dragStartPosition = new Vector2(e.X, e.Y);
+        }
+    }
+
+    private void OnMouseButtonReleased(object? sender, MouseButtonEventArgs e)
+    {
+        if (e.Button is MouseButton.Left)
+        {
+            _isDragging = false;
+            _dragStartPosition = new Vector2();
+        }
+    }
+
+    private void OnMouseMoved(object? sender, MouseEventArgs e)
+    {
+        if (_isDragging)
+        {
+            Vector2 mousePosition = new(e.X, e.Y);
+            Vector2 dragDelta = mousePosition - _dragStartPosition;
+
+            _yaw += dragDelta.X * DragSensitivity;
+            _pitch += dragDelta.Y * DragSensitivity;
+
+            _pitch = Math.Clamp(_pitch, -MathF.PI / 2 + 0.01f, MathF.PI / 2 - 0.01f);
+
+            Matrix4x4 rotationMatrix = Matrix4x4.CreateFromYawPitchRoll(_yaw, _pitch, 0f);
+
+            Camera.Forward = Vector3.Normalize(Vector3.Transform(-Vector3.UnitZ, rotationMatrix));
+            Camera.Right = Vector3.Normalize(Vector3.Cross(Camera.Forward, Vector3.UnitY));
+            Camera.Up = Vector3.Cross(Camera.Right, Camera.Forward);
+
+            _dragStartPosition = mousePosition;
+
+            Camera.UpdateViewMatrix();
         }
     }
 }

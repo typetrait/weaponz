@@ -1,13 +1,18 @@
-﻿using Veldrid;
+﻿
+using Veldrid;
 
 namespace WeaponZ.Game.Input;
 
-public class MouseState
+public class MouseState: IMouseInputContext
 {
     public float X { get; private set; }
     public float Y { get; private set; }
 
     private readonly Dictionary<MouseButton, bool> _pressedStates;
+
+    public event EventHandler<MouseButtonEventArgs>? MouseButtonPressed;
+    public event EventHandler<MouseButtonEventArgs>? MouseButtonReleased;
+    public event EventHandler<MouseEventArgs>? MouseMoved;
 
     public MouseState()
     {
@@ -16,8 +21,15 @@ public class MouseState
 
     public void UpdateFromSnapshot(InputSnapshot inputSnapshot)
     {
-        X = inputSnapshot.MousePosition.X;
-        Y = inputSnapshot.MousePosition.Y;
+        float newFrameX = inputSnapshot.MousePosition.X;
+        float newFrameY = inputSnapshot.MousePosition.Y;
+
+        if (newFrameX != X || newFrameY != Y)
+        {
+            MouseMoved?.Invoke(this, new MouseEventArgs(newFrameX, newFrameY));
+            X = inputSnapshot.MousePosition.X;
+            Y = inputSnapshot.MousePosition.Y;
+        }
 
         foreach (var mouseEvent in inputSnapshot.MouseEvents)
         {
@@ -27,10 +39,12 @@ public class MouseState
             if (mouseEvent.Down)
             {
                 _pressedStates[button] = true;
+                MouseButtonPressed?.Invoke(this, new MouseButtonEventArgs(X, Y, button));
             }
             else if (isDown)
             {
                 _pressedStates[button] = false;
+                MouseButtonReleased?.Invoke(this, new MouseButtonEventArgs(X, Y, button));
             }
         }
     }
