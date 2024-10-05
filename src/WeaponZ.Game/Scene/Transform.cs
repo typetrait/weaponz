@@ -67,9 +67,9 @@ public class Transform
         var transform = Matrix4x4.Identity;
 
         transform *=
-            Matrix4x4.CreateFromYawPitchRoll(Rotation.X, Rotation.Y, Rotation.Z)
-            * Matrix4x4.CreateTranslation(Position)
-            * Matrix4x4.CreateScale(Scale);
+            Matrix4x4.CreateScale(Scale)
+            * Matrix4x4.CreateFromYawPitchRoll(Rotation.X, Rotation.Y, Rotation.Z)
+            * Matrix4x4.CreateTranslation(Position);
 
         return transform;
     }

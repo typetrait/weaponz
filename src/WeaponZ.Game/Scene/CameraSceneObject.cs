@@ -37,7 +37,7 @@ public class CameraSceneObject : ISceneObject
 
     public void Update(TimeSpan deltaTime)
     {
-        // Camera.Position = Transform.Position;
+        // Camera.Position = GlobalTransform.Position;
     }
 
     private void OnKeyPressed(object? sender, KeyboardEventArgs e)

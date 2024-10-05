@@ -173,6 +173,7 @@ public class Program : IInputContext
         // Validate resources
         if (_graphicsDevice is null
             || _orthographicCamera is null
+            || _mainCamera is null
             || _keyboardState is null
             || _mouseState is null
             || _sceneGraph is null
@@ -184,10 +185,26 @@ public class Program : IInputContext
             throw new InvalidOperationException("Failed to initialize resources.");
         }
 
-        _renderer.BeginFrame(_mainCamera!, _sceneGraph);
+        _renderer.BeginFrame(_mainCamera, _sceneGraph);
         _renderer.DrawSceneGraphNode(_sceneGraph.Root);
         _editorDebugLayer.Draw(_graphicsDevice, _renderer);
         _renderer.EndFrame();
+
+        // Debug
+        _renderer.BeginDebugFrame(_mainCamera);
+
+        foreach (var pawn in SceneGraph.FindAllByKind(_sceneGraph.Root, SceneObjectKind.Pawn))
+        {
+            _renderer.DrawLine(
+                _orthographicCamera.Position,
+                pawn.GlobalTransform.Position,
+                new Vector3(1.0f, 0.0f, 0.0f)
+            );
+        }
+
+        _renderer.EndDebugFrame();
+
+        _graphicsDevice.SwapBuffers();
     }
 
     private static void SetupImGuiStyles()

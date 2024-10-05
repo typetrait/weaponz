@@ -26,6 +26,13 @@ public class LightSceneObject : ISceneObject
 
     public void Update(TimeSpan deltaTime)
     {
-        Light = new PointLight(GlobalTransform.Position, new Vector3(Light.Color.X, Light.Color.Y, Light.Color.Z));
+        Light = new PointLight(
+            GlobalTransform.Position,
+            new Vector3(
+                Light.Color.X,
+                Light.Color.Y,
+                Light.Color.Z
+            )
+        );
     }
 }

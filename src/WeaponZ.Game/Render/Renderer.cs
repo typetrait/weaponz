@@ -23,6 +23,14 @@ public class Renderer
     private readonly DeviceBuffer _modelUniformBuffer;
     private readonly DeviceBuffer _lightingUniformBuffer;
 
+    // Debug Graphics
+    private Pipeline? _debugPipeline;
+    private CommandList? _debugCommandList;
+    private ResourceSet? _debugResourceSet;
+    private readonly DeviceBuffer _debugVertexBuffer;
+
+    private readonly SampleShaders _sampleShaders;
+
     public Renderer(GraphicsDevice graphicsDevice)
     {
         GraphicsDevice = graphicsDevice;
@@ -58,8 +66,8 @@ public class Renderer
         VertexLayoutDescription vertexLayoutDescription = Vertex.GetLayout();
 
         // Shaders
-        var sampleShaders = new SampleShaders(GraphicsDevice.ResourceFactory);
-        var shaderSetDescription = new ShaderSetDescription([vertexLayoutDescription], sampleShaders.ShaderGroup1);
+        _sampleShaders = new SampleShaders(GraphicsDevice.ResourceFactory);
+        var shaderSetDescription = new ShaderSetDescription([vertexLayoutDescription], _sampleShaders.ShaderGroup1);
 
         // Resource set
         ResourceSet = GraphicsDevice.ResourceFactory.CreateResourceSet(
@@ -94,8 +102,16 @@ public class Renderer
         };
 
         Pipeline = GraphicsDevice.ResourceFactory.CreateGraphicsPipeline(pipelineDescription);
-
         _commandList = graphicsDevice.ResourceFactory.CreateCommandList();
+
+        // Debug
+        _debugVertexBuffer = GraphicsDevice.ResourceFactory.CreateBuffer(
+            new BufferDescription(
+                VertexPositionColor.SizeInBytes * 2,
+                BufferUsage.VertexBuffer
+            )
+        );
+        CreateDebugPipelineAndCommandList();
     }
 
     public void BeginFrame(CameraSceneObject activeCamera, SceneGraph sceneGraph)
@@ -114,7 +130,7 @@ public class Renderer
     {
         _commandList.End();
         GraphicsDevice.SubmitCommands(_commandList);
-        GraphicsDevice.SwapBuffers();
+        //GraphicsDevice.SwapBuffers();
     }
 
     public void DrawSceneGraphNode(ISceneObject sceneObject)
@@ -135,7 +151,7 @@ public class Renderer
         if (sceneObject.Kind is SceneObjectKind.Pawn && sceneObject is PawnSceneObject pawn)
         {
             // Update transform buffer
-            _commandList!.SetGraphicsResourceSet(0, ResourceSet);
+            _commandList.SetGraphicsResourceSet(0, ResourceSet);
             _commandList.UpdateBuffer(_modelUniformBuffer, 0, pawn.GlobalTransform.Matrix);
 
             // Update vertex buffer
@@ -159,6 +175,38 @@ public class Renderer
         }
     }
 
+    public void BeginDebugFrame(CameraSceneObject activeCamera)
+    {
+        _debugCommandList?.Begin();
+        _debugCommandList?.SetFramebuffer(GraphicsDevice.SwapchainFramebuffer);
+        _debugCommandList?.SetPipeline(_debugPipeline);
+
+        _debugCommandList?.UpdateBuffer(_projectionUniformBuffer, 0, activeCamera.Camera.Projection);
+        _debugCommandList?.UpdateBuffer(_viewUniformBuffer, 0, activeCamera.Camera.View);
+
+        _debugCommandList?.SetGraphicsResourceSet(0, _debugResourceSet);
+    }
+
+    public void EndDebugFrame()
+    {
+        _debugCommandList?.End();
+        GraphicsDevice.SubmitCommands(_debugCommandList);
+    }
+
+    public void DrawLine(Vector3 start, Vector3 end, Vector3 color)
+    {
+        var vertices = new[]
+        {
+            new VertexPositionColor(start, color),
+            new VertexPositionColor(end, color)
+        };
+
+        _debugCommandList?.UpdateBuffer(_debugVertexBuffer, 0, vertices);
+        _debugCommandList?.SetVertexBuffer(0, _debugVertexBuffer);
+
+        _debugCommandList?.Draw(2);
+    }
+
     private void UpdateCameraUniforms(CameraSceneObject camera)
     {
         _commandList.UpdateBuffer(_projectionUniformBuffer, 0, camera.Camera.Projection);
@@ -173,7 +221,16 @@ public class Renderer
         {
             LightingBuffer lightingBuffer = new(
                 new Vector4(activeCamera.Camera.Position, 1.0f),
-                lights.Select(l => new PointLight(l.GlobalTransform.Position, new Vector3(l.Light.Color.X, l.Light.Color.Y, l.Light.Color.Z))).ToArray()
+                lights.Select(
+                    light => new PointLight(
+                        light.GlobalTransform.Position,
+                        new Vector3(
+                            light.Light.Color.X,
+                            light.Light.Color.Y,
+                            light.Light.Color.Z
+                        )
+                    )
+                ).ToArray()
             );
 
             _commandList.UpdateBuffer(_lightingUniformBuffer, 0, lightingBuffer);
@@ -181,8 +238,77 @@ public class Renderer
         }
     }
 
-    private Pipeline CreatePipeline()
+    private void CreateDebugPipelineAndCommandList()
     {
-        return null!;
+        VertexLayoutDescription vertexLayout = VertexPositionColor.GetLayout();
+
+        // Resource layout
+        var resourceLayoutDescription = new ResourceLayoutDescription(
+            new ResourceLayoutElementDescription("ProjectionBuffer", ResourceKind.UniformBuffer, ShaderStages.Vertex),
+            new ResourceLayoutElementDescription("ViewBuffer", ResourceKind.UniformBuffer, ShaderStages.Vertex)
+        );
+
+        ResourceLayout resourceLayout = GraphicsDevice.ResourceFactory.CreateResourceLayout(resourceLayoutDescription);
+
+        _debugResourceSet = GraphicsDevice.ResourceFactory.CreateResourceSet(
+            new ResourceSetDescription(
+                resourceLayout,
+                _projectionUniformBuffer,
+                _viewUniformBuffer
+            )
+        );
+
+        ShaderSetDescription shaders = new([vertexLayout], _sampleShaders.LineShaderGroup);
+
+        GraphicsPipelineDescription pipelineDescription = new()
+        {
+            BlendState = BlendStateDescription.SingleAlphaBlend,
+            ResourceLayouts = [resourceLayout],
+            DepthStencilState = DepthStencilStateDescription.Disabled,
+            RasterizerState = new RasterizerStateDescription(
+                FaceCullMode.None,
+                PolygonFillMode.Solid,
+                FrontFace.CounterClockwise,
+                depthClipEnabled: false,
+                scissorTestEnabled: false
+            ),
+            PrimitiveTopology = PrimitiveTopology.LineList,
+            ShaderSet = shaders,
+            Outputs = GraphicsDevice.SwapchainFramebuffer.OutputDescription,
+        };
+
+        _debugPipeline = GraphicsDevice.ResourceFactory.CreateGraphicsPipeline(pipelineDescription);
+        _debugCommandList = GraphicsDevice.ResourceFactory.CreateCommandList();
     }
+
+    //private Pipeline CreatePipeline()
+    //{
+    //    ResourceLayoutDescription resourceLayoutDescription = new(
+    //        new ResourceLayoutElementDescription("ProjectionBuffer", ResourceKind.UniformBuffer, ShaderStages.Vertex),
+    //        new ResourceLayoutElementDescription("ViewBuffer", ResourceKind.UniformBuffer, ShaderStages.Vertex)
+    //    );
+
+    //    ResourceLayout resourceLayout = GraphicsDevice.ResourceFactory.CreateResourceLayout(resourceLayoutDescription);
+
+    //    RasterizerStateDescription rasterizerStateDescription = new(
+    //        cullMode: FaceCullMode.Back,
+    //        fillMode: PolygonFillMode.Solid,
+    //        frontFace: FrontFace.CounterClockwise,
+    //        depthClipEnabled: true,
+    //        scissorTestEnabled: false
+    //    );
+
+    //    GraphicsPipelineDescription pipelineDescription = new()
+    //    {
+    //        //ShaderSet = shaderSetDescription,
+    //        ResourceLayouts = [resourceLayout],
+    //        RasterizerState = rasterizerStateDescription,
+    //        PrimitiveTopology = PrimitiveTopology.TriangleList,
+    //        BlendState = BlendStateDescription.SingleOverrideBlend,
+    //        DepthStencilState = DepthStencilStateDescription.DepthOnlyLessEqual,
+    //        Outputs = GraphicsDevice.SwapchainFramebuffer.OutputDescription,
+    //    };
+
+    //    return GraphicsDevice.ResourceFactory.CreateGraphicsPipeline(pipelineDescription);
+    //}
 }
