@@ -1,5 +1,7 @@
 ﻿using System.Numerics;
 
+using ImGuiNET;
+
 using Veldrid;
 using WeaponZ.Game.Input;
 using WeaponZ.Game.Render;
@@ -71,6 +73,9 @@ public class CameraSceneObject : ISceneObject
 
     private void OnMouseButtonPressed(object? sender, MouseButtonEventArgs e)
     {
+        //TODO: Fix this coupling
+        if (ImGui.GetIO().WantCaptureMouse) { return; }
+
         // Reset every other input's dragging state
         foreach (var input in _draggingInputs)
         {
@@ -82,23 +87,33 @@ public class CameraSceneObject : ISceneObject
 
         _draggingInputs[e.Button] = true;
         _dragStartPosition = new Vector2(e.X, e.Y);
+
+        _inputContext.SetMouseGrab(true);
     }
 
     private void OnMouseButtonReleased(object? sender, MouseButtonEventArgs e)
     {
+        if (_draggingInputs[e.Button])
+        {
+            _inputContext.SetMouseGrab(false);
+        }
+
         _draggingInputs[e.Button] = false;
         _dragStartPosition = new Vector2();
     }
 
     private void OnMouseMoved(object? sender, MouseEventArgs e)
     {
+        Vector2 mousePosition = new(e.X, e.Y);
+
         if (_draggingInputs[MouseButton.Left])
         {
-            Vector2 mousePosition = new(e.X, e.Y);
             Vector2 dragDelta = mousePosition - _dragStartPosition;
 
-            _yaw += dragDelta.X * DragSensitivity;
-            _pitch += dragDelta.Y * DragSensitivity;
+            _inputContext.UpdateWarpedCursorPosition(_dragStartPosition);
+
+            _yaw += -dragDelta.X * DragSensitivity;
+            _pitch += -dragDelta.Y * DragSensitivity;
 
             _pitch = Math.Clamp(_pitch, -MathF.PI / 2 + 0.01f, MathF.PI / 2 - 0.01f);
 
@@ -108,30 +123,26 @@ public class CameraSceneObject : ISceneObject
             Camera.Right = Vector3.Normalize(Vector3.Cross(Camera.Forward, Vector3.UnitY));
             Camera.Up = Vector3.Cross(Camera.Right, Camera.Forward);
 
-            _dragStartPosition = mousePosition;
-
             Camera.UpdateViewMatrix();
         }
         else if (_draggingInputs[MouseButton.Middle])
         {
-            Vector2 mousePosition = new(e.X, e.Y);
             Vector2 dragDelta = mousePosition - _dragStartPosition;
+
+            _inputContext.UpdateWarpedCursorPosition(_dragStartPosition);
 
             Camera.Position += -Camera.Right * dragDelta.X * DragSensitivity;
             Camera.Position += Camera.Up * dragDelta.Y * DragSensitivity;
-
-            _dragStartPosition = mousePosition;
 
             Camera.UpdateViewMatrix();
         }
         else if (_draggingInputs[MouseButton.Right])
         {
-            Vector2 mousePosition = new(e.X, e.Y);
             Vector2 dragDelta = mousePosition - _dragStartPosition;
 
-            Camera.Position += -Camera.Forward * dragDelta.Y * DragSensitivity;
+            _inputContext.UpdateWarpedCursorPosition(_dragStartPosition);
 
-            _dragStartPosition = mousePosition;
+            Camera.Position += -Camera.Forward * dragDelta.Y * DragSensitivity;
 
             Camera.UpdateViewMatrix();
         }

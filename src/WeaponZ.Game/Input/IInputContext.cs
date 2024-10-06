@@ -1,4 +1,6 @@
-﻿using Veldrid;
+﻿using System.Numerics;
+
+using Veldrid;
 
 namespace WeaponZ.Game.Input;
 
@@ -17,15 +19,20 @@ public interface IMouseInputContext
 
 public interface IInputContext : IKeyboardInputContext, IMouseInputContext
 {
+    void UpdateWarpedCursorPosition(Vector2 cursorPosition);
+    void SetMouseGrab(bool shouldGrab);
 }
 
-public class MouseEventArgs(float x, float y) : EventArgs
+public class MouseEventArgs(float x, float y, float deltaX, float deltaY) : EventArgs
 {
     public readonly float X = x;
     public readonly float Y = y;
+
+    public readonly float DeltaX = deltaX;
+    public readonly float DeltaY = deltaY;
 }
 
-public class MouseButtonEventArgs(float x, float y, MouseButton button) : MouseEventArgs(x, y)
+public class MouseButtonEventArgs(float x, float y, float deltaX, float deltaY, MouseButton button) : MouseEventArgs(x, y, deltaX, deltaY)
 {
     public readonly MouseButton Button = button;
 }

@@ -1,6 +1,7 @@
 ﻿using System.Numerics;
-using ImGuiNET;
+
 using Veldrid;
+using Veldrid.Sdl2;
 using Veldrid.StartupUtilities;
 
 using WeaponZ.Game.Editor;
@@ -42,6 +43,9 @@ public class Program : IInputContext
     // Editor Debug Layer
     private EditorDebugLayer? _editorDebugLayer;
 
+    // Window
+    private Sdl2Window? _window;
+
     /// <summary>
     /// Entry point
     /// </summary>
@@ -65,7 +69,7 @@ public class Program : IInputContext
             WindowTitle = "WeaponZ",
         };
 
-        var window = VeldridStartup.CreateWindow(ref windowCreateInfo);
+        _window = VeldridStartup.CreateWindow(ref windowCreateInfo);
 
         // Graphics device options
         var graphicsDeviceOptions = new GraphicsDeviceOptions
@@ -78,7 +82,7 @@ public class Program : IInputContext
         };
 
         // Default graphics device
-        _graphicsDevice = VeldridStartup.CreateGraphicsDevice(window, graphicsDeviceOptions);
+        _graphicsDevice = VeldridStartup.CreateGraphicsDevice(_window, graphicsDeviceOptions);
 
         // OpenGL graphics device
         // _graphicsDevice = VeldridStartup.CreateDefaultOpenGLGraphicsDevice(
@@ -93,7 +97,7 @@ public class Program : IInputContext
         _renderer = new Renderer(_graphicsDevice);
 
         // ImGui
-        _imGuiRenderer = new ImGuiRenderer(_graphicsDevice, _renderer.PipelineOutput, window.Width, window.Height);
+        _imGuiRenderer = new ImGuiRenderer(_graphicsDevice, _renderer.PipelineOutput, _window.Width, _window.Height);
 
         // Camera
         _perspectiveCamera = new PerspectiveCamera(
@@ -157,11 +161,11 @@ public class Program : IInputContext
         _editorDebugLayer = new EditorDebugLayer(_imGuiRenderer, this, _sceneGraph);
 
         // Main loop
-        while (window.Exists)
+        while (_window.Exists)
         {
-            InputSnapshot inputSnapshot = window.PumpEvents();
+            var inputSnapshot = _window.PumpEvents();
             _keyboardState.UpdateFromSnapshot(inputSnapshot);
-            _mouseState.UpdateFromSnapshot(inputSnapshot);
+            _mouseState.UpdateFromSnapshot(inputSnapshot, _window.MouseDelta.X, _window.MouseDelta.Y);
 
             // Update camera
             _perspectiveCamera.Update(_keyboardState, _mouseState, deltaTime);
@@ -237,5 +241,16 @@ public class Program : IInputContext
         _renderer.EndDebugFrame();
 
         _graphicsDevice.SwapBuffers();
+    }
+
+    public void SetMouseGrab(bool shouldGrab)
+    {
+        Sdl2Native.SDL_SetWindowGrab(_window!.SdlWindowHandle, shouldGrab);
+        Sdl2Native.SDL_ShowCursor(shouldGrab ? Sdl2Native.SDL_DISABLE : Sdl2Native.SDL_ENABLE);
+    }
+
+    public void UpdateWarpedCursorPosition(Vector2 cursorPosition)
+    {
+        Sdl2Native.SDL_WarpMouseInWindow(_window!.SdlWindowHandle, (int)cursorPosition.X, (int)cursorPosition.Y);
     }
 }

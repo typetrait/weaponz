@@ -19,14 +19,14 @@ public class MouseState: IMouseInputContext
         _pressedStates = [];
     }
 
-    public void UpdateFromSnapshot(InputSnapshot inputSnapshot)
+    public void UpdateFromSnapshot(InputSnapshot inputSnapshot, float deltaX, float deltaY)
     {
         float newFrameX = inputSnapshot.MousePosition.X;
         float newFrameY = inputSnapshot.MousePosition.Y;
 
         if (newFrameX != X || newFrameY != Y)
         {
-            MouseMoved?.Invoke(this, new MouseEventArgs(newFrameX, newFrameY));
+            MouseMoved?.Invoke(this, new MouseEventArgs(newFrameX, newFrameY, deltaX, deltaY));
             X = inputSnapshot.MousePosition.X;
             Y = inputSnapshot.MousePosition.Y;
         }
@@ -39,12 +39,12 @@ public class MouseState: IMouseInputContext
             if (mouseEvent.Down)
             {
                 _pressedStates[button] = true;
-                MouseButtonPressed?.Invoke(this, new MouseButtonEventArgs(X, Y, button));
+                MouseButtonPressed?.Invoke(this, new MouseButtonEventArgs(X, Y, deltaX, deltaY, button));
             }
             else if (isDown)
             {
                 _pressedStates[button] = false;
-                MouseButtonReleased?.Invoke(this, new MouseButtonEventArgs(X, Y, button));
+                MouseButtonReleased?.Invoke(this, new MouseButtonEventArgs(X, Y, deltaX, deltaY, button));
             }
         }
     }
