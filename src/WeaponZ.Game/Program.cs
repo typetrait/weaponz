@@ -245,12 +245,22 @@ public class Program : IInputContext
 
     public void SetMouseGrab(bool shouldGrab)
     {
-        Sdl2Native.SDL_SetWindowGrab(_window!.SdlWindowHandle, shouldGrab);
+        if (_window is null)
+        {
+            throw new InvalidOperationException($"Can't set grab state. {nameof(_window)} is null.");
+        }
+
+        Sdl2Native.SDL_SetWindowGrab(_window.SdlWindowHandle, shouldGrab);
         Sdl2Native.SDL_ShowCursor(shouldGrab ? Sdl2Native.SDL_DISABLE : Sdl2Native.SDL_ENABLE);
     }
 
     public void UpdateWarpedCursorPosition(Vector2 cursorPosition)
     {
-        Sdl2Native.SDL_WarpMouseInWindow(_window!.SdlWindowHandle, (int)cursorPosition.X, (int)cursorPosition.Y);
+        if (_window is null)
+        {
+            throw new InvalidOperationException($"Can't warp cursor position. {nameof(_window)} is null.");
+        }
+
+        Sdl2Native.SDL_WarpMouseInWindow(_window.SdlWindowHandle, (int)cursorPosition.X, (int)cursorPosition.Y);
     }
 }
