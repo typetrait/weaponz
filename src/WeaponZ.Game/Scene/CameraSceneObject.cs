@@ -142,7 +142,7 @@ public class CameraSceneObject : ISceneObject
 
             _inputContext.UpdateWarpedCursorPosition(_dragStartPosition);
 
-            Camera.Position += -Camera.Forward * dragDelta.Y * DragSensitivity;
+            Camera.Position += -Camera.Forward * (-dragDelta.X + dragDelta.Y) * DragSensitivity;
 
             Camera.UpdateViewMatrix();
         }
