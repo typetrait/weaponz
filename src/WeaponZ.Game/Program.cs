@@ -167,9 +167,6 @@ public class Program : IInputContext
             _keyboardState.UpdateFromSnapshot(inputSnapshot);
             _mouseState.UpdateFromSnapshot(inputSnapshot, _window.MouseDelta.X, _window.MouseDelta.Y);
 
-            // Update camera
-            _perspectiveCamera.Update(_keyboardState, _mouseState, deltaTime);
-
             _editorDebugLayer.Update(deltaTime, inputSnapshot);
             _sceneGraph.Update(_sceneGraph.Root, deltaTime);
 
@@ -262,5 +259,15 @@ public class Program : IInputContext
         }
 
         Sdl2Native.SDL_WarpMouseInWindow(_window.SdlWindowHandle, (int)cursorPosition.X, (int)cursorPosition.Y);
+    }
+
+    public bool IsKeyUp(Key key)
+    {
+        return _keyboardState is not null && _keyboardState.IsKeyUp(key);
+    }
+
+    public bool IsKeyDown(Key key)
+    {
+        return _keyboardState is not null && _keyboardState.IsKeyDown(key);
     }
 }

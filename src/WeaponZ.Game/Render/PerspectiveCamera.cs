@@ -5,9 +5,6 @@ namespace WeaponZ.Game.Render;
 
 public class PerspectiveCamera
 {
-    public float BaseSpeed { get; set; } = 3.5f;
-    public float SpeedModifier { get; set; } = 2.5f;
-
     public float ZNear { get; private set; }
     public float ZFar { get; private set; }
     public Vector3 Position { get; set; }
@@ -40,48 +37,8 @@ public class PerspectiveCamera
         //Up = Vector3.Cross(Forward, Right);
     }
 
-    public void Update(KeyboardState keyboard, MouseState mouse, TimeSpan dt)
+    public void Update(TimeSpan dt)
     {
-        Vector3 translation = Vector3.Zero;
-        float speed = BaseSpeed * (float)dt.TotalSeconds;
-
-        if (keyboard.IsKeyDown(Veldrid.Key.ShiftLeft))
-        {
-            speed *= SpeedModifier;
-        }
-
-        if (keyboard.IsKeyDown(Veldrid.Key.W))
-        {
-            translation += Forward * speed;
-        }
-
-        if (keyboard.IsKeyDown(Veldrid.Key.A))
-        {
-            translation += -Right * speed;
-        }
-
-        if (keyboard.IsKeyDown(Veldrid.Key.S))
-        {
-            translation += -Forward * speed;
-        }
-
-        if (keyboard.IsKeyDown(Veldrid.Key.D))
-        {
-            translation += Right * speed;
-        }
-
-        if (keyboard.IsKeyDown(Veldrid.Key.Space))
-        {
-            translation += Vector3.UnitY * speed;
-        }
-
-        if (keyboard.IsKeyDown(Veldrid.Key.LControl))
-        {
-            translation += -Vector3.UnitY * speed;
-        }
-
-        Position += translation;
-        UpdateViewMatrix();
     }
 
     public void UpdateViewMatrix()

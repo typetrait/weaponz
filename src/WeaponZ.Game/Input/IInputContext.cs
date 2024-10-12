@@ -8,6 +8,9 @@ public interface IKeyboardInputContext
 {
     event EventHandler<KeyboardEventArgs>? KeyPressed;
     event EventHandler<KeyboardEventArgs>? KeyReleased;
+
+    bool IsKeyUp(Key key);
+    bool IsKeyDown(Key key);
 }
 
 public interface IMouseInputContext

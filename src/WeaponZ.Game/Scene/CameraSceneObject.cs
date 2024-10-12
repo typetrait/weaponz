@@ -16,8 +16,10 @@ public class CameraSceneObject : ISceneObject
     public SceneObjectKind Kind => SceneObjectKind.Camera;
     public ISceneObject? Parent { get; set; }
     public Transform GlobalTransform { get; set; }
-
     public PerspectiveCamera Camera { get; }
+
+    public float BaseSpeed { get; set; } = 3.5f;
+    public float SpeedModifier { get; set; } = 2.5f;
 
     private readonly IInputContext _inputContext;
 
@@ -38,7 +40,12 @@ public class CameraSceneObject : ISceneObject
 
     private const float DragSensitivity = 0.002f;
 
-    public CameraSceneObject(string displayName, Transform transform, PerspectiveCamera camera, IInputContext inputContext)
+    public CameraSceneObject(
+        string displayName,
+        Transform transform,
+        PerspectiveCamera camera,
+        IInputContext inputContext
+    )
     {
         Children = [];
         DisplayName = displayName;
@@ -58,6 +65,46 @@ public class CameraSceneObject : ISceneObject
     public void Update(TimeSpan deltaTime)
     {
         // Camera.Position = GlobalTransform.Position;
+        Vector3 translation = Vector3.Zero;
+        float speed = BaseSpeed * (float)deltaTime.TotalSeconds;
+
+        if (_inputContext.IsKeyDown(Key.ShiftLeft))
+        {
+            speed *= SpeedModifier;
+        }
+
+        if (_inputContext.IsKeyDown(Key.W))
+        {
+            translation += Camera.Forward * speed;
+        }
+
+        if (_inputContext.IsKeyDown(Key.A))
+        {
+            translation += -Camera.Right * speed;
+        }
+
+        if (_inputContext.IsKeyDown(Key.S))
+        {
+            translation += -Camera.Forward * speed;
+        }
+
+        if (_inputContext.IsKeyDown(Key.D))
+        {
+            translation += Camera.Right * speed;
+        }
+
+        if (_inputContext.IsKeyDown(Key.Space))
+        {
+            translation += Vector3.UnitY * speed;
+        }
+
+        if (_inputContext.IsKeyDown(Key.LControl))
+        {
+            translation += -Vector3.UnitY * speed;
+        }
+
+        Camera.Position += translation;
+        Camera.UpdateViewMatrix();
     }
 
     private void OnKeyPressed(object? sender, KeyboardEventArgs e)

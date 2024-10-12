@@ -57,3 +57,30 @@ public struct VertexPositionColor(Vector3 position, Vector3 color) : IVertex
         );
     }
 }
+
+public struct VertexPositionUV(Vector3 position, Vector2 uv) : IVertex
+{
+    public Vector3 Position = position;
+    public Vector2 UV = uv;
+
+    // 3 floats for position = 12 bytes
+    // 2 floats for uv = 8 bytes
+    // Total = 20 bytes
+    public static uint SizeInBytes => 20;
+
+    public static VertexLayoutDescription GetLayout()
+    {
+        return new VertexLayoutDescription(
+            new VertexElementDescription(
+                "Position",
+                VertexElementFormat.Float3,
+                VertexElementSemantic.TextureCoordinate
+            ),
+            new VertexElementDescription(
+                "UV",
+                VertexElementFormat.Float2,
+                VertexElementSemantic.TextureCoordinate
+            )
+        );
+    }
+}

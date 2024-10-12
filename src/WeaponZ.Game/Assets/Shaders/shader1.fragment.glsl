@@ -7,6 +7,14 @@ layout (location = 1) in vec4 fsin_Position;
 
 layout (location = 0) out vec4 fsout_Color;
 
+struct PhongMaterial
+{
+    vec3 ambientColor;
+    vec3 diffuseColor;
+    vec3 specularColor;
+    float shininess;
+};
+
 struct PointLight
 {
     vec4 position;
