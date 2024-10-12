@@ -206,7 +206,6 @@ public class Program : IInputContext
 
         _renderer.BeginFrame(_mainCamera, _sceneGraph);
         _renderer.DrawSceneGraphNode(_sceneGraph.Root);
-        _editorDebugLayer.Draw(_graphicsDevice, _renderer);
         _renderer.EndFrame();
 
         // Debug
@@ -244,6 +243,8 @@ public class Program : IInputContext
                 );
             }
         }
+
+        _editorDebugLayer.Draw(_graphicsDevice, _renderer);
 
         _renderer.EndDebugFrame();
 

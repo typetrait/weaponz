@@ -25,7 +25,7 @@ public class Renderer
 
     // Debug Graphics
     private Pipeline? _debugPipeline;
-    private CommandList? _debugCommandList;
+    public CommandList? _debugCommandList;
     private ResourceSet? _debugResourceSet;
     private readonly DeviceBuffer _debugVertexBuffer;
 

@@ -64,7 +64,7 @@ public class EditorDebugLayer
             SetupTransformUi(_selectedObject.Transform);
         }
 
-        _imguiRenderer.Render(graphicsDevice, renderer._commandList);
+        _imguiRenderer.Render(graphicsDevice, renderer._debugCommandList);
     }
 
     /// <summary>
