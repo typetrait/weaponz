@@ -1,5 +1,4 @@
 ﻿using System.Numerics;
-using WeaponZ.Game.Input;
 
 namespace WeaponZ.Game.Render;
 
@@ -35,10 +34,6 @@ public class PerspectiveCamera
 
         Right = Vector3.Cross(Up, Forward);
         //Up = Vector3.Cross(Forward, Right);
-    }
-
-    public void Update(TimeSpan dt)
-    {
     }
 
     public void UpdateViewMatrix()
