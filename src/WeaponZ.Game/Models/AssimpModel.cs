@@ -20,7 +20,10 @@ public class AssimpModel
             var normal = Scene.Meshes[0].Normals[i];
 
             vertices.Add(
-                new Vertex(new Vector3(vertex.X, vertex.Y, vertex.Z), new Vector3(normal.X, normal.Y, normal.Z))
+                new Vertex(
+                    new Vector3(vertex.X, vertex.Y, vertex.Z),
+                    new Vector3(normal.X, normal.Y, normal.Z)
+                )
             );
         }
 

@@ -130,16 +130,26 @@ public class Program : IInputContext
         var modelBufferFactory = new ModelBufferFactory(_graphicsDevice.ResourceFactory);
         var bunnyModelBuffer = modelBufferFactory.CreateModelBuffer<Vertex>(models.Bunny);
 
+        var floorModel = modelBufferFactory.CreateModelBuffer<Vertex>(models.Quad);
+
        // var spongaModelBuffer = modelBufferFactory.CreateModelBuffer<Vertex>(models.Sponga);
 
         // Scene Objects
         var bunnyProp = new PawnSceneObject("Bunny", transform, bunnyModelBuffer);
         var bunnyProp2 = new PawnSceneObject("Bunny 2", transform2, bunnyModelBuffer);
 
+        var floor = new PawnSceneObject("Floor", new Transform(), floorModel);
+        floor.Transform.RotateY((float)MathUtils.DegreesToRadians(-90.0f));
+        floor.Transform.TranslateY(-0.480f);
+        floor.Transform.ScaleX(50.0f);
+        floor.Transform.ScaleY(50.0f);
+
         //var sponga = new PawnSceneObject("Sponga", new Transform(), spongaModelBuffer);
 
         _sceneGraph.AppendTo(_sceneGraph.Root, bunnyProp);
         _sceneGraph.AppendTo(_sceneGraph.Root.Children[0], bunnyProp2);
+
+        _sceneGraph.AppendTo(_sceneGraph.Root, floor);
 
         //_sceneGraph.AppendTo(_sceneGraph.Root, sponga);
 

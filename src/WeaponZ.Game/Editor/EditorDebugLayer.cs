@@ -7,6 +7,7 @@ using Veldrid;
 using WeaponZ.Game.Input;
 using WeaponZ.Game.Render;
 using WeaponZ.Game.Scene;
+using WeaponZ.Game.Util;
 
 namespace WeaponZ.Game.Editor;
 
@@ -157,7 +158,18 @@ public class EditorDebugLayer
 
             if (ImGui.TreeNodeEx("Rotation", ImGuiTreeNodeFlags.DefaultOpen))
             {
-                ImGui.DragFloat3("", ref t.Rotation, 0.02f);
+                var value = new Vector3(
+                    (float)MathUtils.RadiansToDegrees(t.Rotation.X),
+                    (float)MathUtils.RadiansToDegrees(t.Rotation.Y),
+                    (float)MathUtils.RadiansToDegrees(t.Rotation.Z)
+                );
+                ImGui.DragFloat3("", ref value, 0.02f);
+                t.Rotation = new Vector3(
+                    (float)MathUtils.DegreesToRadians(value.X),
+                    (float)MathUtils.DegreesToRadians(value.Y),
+                    (float)MathUtils.DegreesToRadians(value.Z)
+                );
+
                 ImGui.TreePop();
             }
 

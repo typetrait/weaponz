@@ -7,6 +7,7 @@ public class SampleModels
     private readonly AssimpModelLoader _modelLoader;
 
     public Model Triangle { get; }
+    public Model Quad { get; }
     public Model Cube { get; }
     public Model Bunny { get; }
     public Model Sponga { get; }
@@ -16,6 +17,8 @@ public class SampleModels
         _modelLoader = new AssimpModelLoader();
 
         Triangle = PrimitiveModelFactory.CreateTriangle();
+
+        Quad = PrimitiveModelFactory.CreateQuad();
 
         Cube = PrimitiveModelFactory.CreateCube();
 
