@@ -201,7 +201,8 @@ public class EditorDebugLayer
             Vector3 color = new(lightSceneObject.Light.Color.X, lightSceneObject.Light.Color.Y, lightSceneObject.Light.Color.Z);
             ImGui.ColorEdit3("Color", ref color);
 
-            lightSceneObject.Light = new PointLight(
+            lightSceneObject.Light = new Light(
+                LightType.Point,
                 new Vector3(lightSceneObject.Light.Position.X, lightSceneObject.Light.Position.Y, lightSceneObject.Light.Position.Z),
                 new Vector3(color.X, color.Y, color.Z)
             );

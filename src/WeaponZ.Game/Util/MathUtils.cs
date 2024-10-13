@@ -11,4 +11,10 @@ public static class MathUtils
     {
         return value * (180.0f / Math.PI);
     }
+
+    public static double CeilingToNearestMultipleOf(double value, double multiple)
+    {
+        double result = Math.Ceiling(value / multiple) * multiple;
+        return result;
+    }
 }

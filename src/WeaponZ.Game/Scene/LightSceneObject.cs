@@ -12,7 +12,7 @@ public class LightSceneObject : ISceneObject
     public ISceneObject? Parent { get; set; }
     public Transform GlobalTransform { get; set; }
 
-    public PointLight Light { get; set; }
+    public Light Light { get; set; }
 
     public LightSceneObject(string displayName, Transform transform, Vector3 color)
     {
@@ -21,12 +21,17 @@ public class LightSceneObject : ISceneObject
         Transform = transform;
         GlobalTransform = Transform;
 
-        Light = new PointLight(transform.Position, color);
+        Light = new Light(
+            LightType.Point,
+            transform.Position,
+            color
+        );
     }
 
     public void Update(TimeSpan deltaTime)
     {
-        Light = new PointLight(
+        Light = new Light(
+            LightType.Point,
             GlobalTransform.Position,
             new Vector3(
                 Light.Color.X,

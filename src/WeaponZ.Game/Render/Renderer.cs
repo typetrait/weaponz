@@ -3,6 +3,7 @@
 using Veldrid;
 
 using WeaponZ.Game.Scene;
+using WeaponZ.Game.Util;
 
 namespace WeaponZ.Game.Render;
 
@@ -59,7 +60,7 @@ public class Renderer
         );
 
         _lightingUniformBuffer = GraphicsDevice.ResourceFactory.CreateBuffer(
-            new BufferDescription(8224, BufferUsage.UniformBuffer | BufferUsage.Dynamic)
+            new BufferDescription((uint)MathUtils.CeilingToNearestMultipleOf(12308, 16), BufferUsage.UniformBuffer | BufferUsage.Dynamic)
         );
 
         // Vertex layout descriptions
@@ -222,7 +223,8 @@ public class Renderer
             LightingBuffer lightingBuffer = new(
                 new Vector4(activeCamera.Camera.Position, 1.0f),
                 lights.Select(
-                    light => new PointLight(
+                    light => new Light(
+                        LightType.Point,
                         light.GlobalTransform.Position,
                         new Vector3(
                             light.Light.Color.X,

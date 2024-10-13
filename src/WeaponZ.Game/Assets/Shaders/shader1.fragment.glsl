@@ -1,6 +1,9 @@
 #version 460 core
 
-#define MAX_POINT_LIGHTS 256
+#define MAX_SCENE_LIGHTS 256
+
+const int LightTypePoint = 0;
+const int LightTypeDirectional = 1;
 
 layout (location = 0) in vec3 fsin_Normal;
 layout (location = 1) in vec4 fsin_Position;
@@ -15,17 +18,18 @@ struct PhongMaterial
     float shininess;
 };
 
-struct PointLight
+struct Light
 {
     vec4 position;
     vec4 color;
+    int type;
 };
 
 layout (set = 0, binding = 3) uniform LightingBuffer
 {
     vec4 CameraPosition;
-    PointLight pointLights[MAX_POINT_LIGHTS];
-    int pointLightCount;
+    Light lights[MAX_SCENE_LIGHTS];
+    int lightCount;
 };
 
 void main()
@@ -40,9 +44,9 @@ void main()
     float ambientStrength = 0.1f;
     vec3 ambientColor = ambientStrength * vec3(1.0f);
 
-    for (int i = 0; i < pointLightCount; i++)
+    for (int i = 0; i < lightCount; i++)
     {
-        PointLight light = pointLights[i];
+        Light light = lights[i];
 
         vec3 lightColor = light.color.xyz;
 
