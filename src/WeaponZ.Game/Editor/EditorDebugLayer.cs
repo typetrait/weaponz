@@ -198,21 +198,36 @@ public class EditorDebugLayer
     {
         if (ImGui.TreeNode("Light"))
         {
-            Vector3 color = new(lightSceneObject.Light.Color.X, lightSceneObject.Light.Color.Y, lightSceneObject.Light.Color.Z);
-            //LightType type = lightSceneObject.Light.Type;
+            Vector3 color = new(
+                lightSceneObject.Light.Color.X,
+                lightSceneObject.Light.Color.Y,
+                lightSceneObject.Light.Color.Z
+            );
 
             ImGui.ColorEdit3("Color", ref color);
 
-            var types = Enum.GetValues<LightType>();
-            if (ImGui.BeginCombo("Type", types[0].ToString()))
+            LightType selectedLightType = lightSceneObject.Light.Type;
+            if (ImGui.BeginCombo("Type", selectedLightType.ToString()))
             {
+                var types = Enum.GetValues<LightType>();
                 foreach (var type in types)
                 {
-                    ImGui.Selectable(type.ToString());
+                    bool isSelected = (selectedLightType == type);
+                    if (ImGui.Selectable(type.ToString(), isSelected))
+                    {
+                        selectedLightType = type;
+                    }
+
+                    if (isSelected)
+                    {
+                        ImGui.SetItemDefaultFocus();
+                    }
                 }
 
                 ImGui.EndCombo();
             }
+
+            lightSceneObject.LightType = selectedLightType;
 
             lightSceneObject.Light = new Light(
                 lightSceneObject.LightType,

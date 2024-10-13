@@ -22,7 +22,7 @@ struct Light
 {
     vec4 position;
     vec4 color;
-    int type;
+    float type;
 };
 
 layout (set = 0, binding = 3) uniform LightingBuffer

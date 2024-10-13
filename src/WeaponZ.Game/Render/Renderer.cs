@@ -224,7 +224,7 @@ public class Renderer
                 new Vector4(activeCamera.Camera.Position, 1.0f),
                 lights.Select(
                     light => new Light(
-                        LightType.Point,
+                        light.LightType,
                         light.GlobalTransform.Position,
                         new Vector3(
                             light.Light.Color.X,
