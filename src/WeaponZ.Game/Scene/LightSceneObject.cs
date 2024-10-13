@@ -12,8 +12,8 @@ public class LightSceneObject : ISceneObject
     public ISceneObject? Parent { get; set; }
     public Transform GlobalTransform { get; set; }
 
-    public Light Light { get; set; }
-    public LightType LightType { get; set; }
+    public ILight Light { get; set; }
+    public LightType LightType => Light.Type;
 
     public LightSceneObject(string displayName, Transform transform, Vector3 color)
     {
@@ -22,8 +22,7 @@ public class LightSceneObject : ISceneObject
         Transform = transform;
         GlobalTransform = Transform;
 
-        Light = new Light(
-            LightType.Point,
+        Light = new PointLight(
             transform.Position,
             color
         );
@@ -31,14 +30,13 @@ public class LightSceneObject : ISceneObject
 
     public void Update(TimeSpan deltaTime)
     {
-        Light = new Light(
-            LightType,
-            GlobalTransform.Position,
-            new Vector3(
-                Light.Color.X,
-                Light.Color.Y,
-                Light.Color.Z
-            )
-        );
+        //Light = new PointLight(
+        //    GlobalTransform.Position,
+        //    new Vector3(
+        //        Light.Color.X,
+        //        Light.Color.Y,
+        //        Light.Color.Z
+        //    )
+        //);
     }
 }

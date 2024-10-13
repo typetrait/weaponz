@@ -227,13 +227,26 @@ public class EditorDebugLayer
                 ImGui.EndCombo();
             }
 
-            lightSceneObject.LightType = selectedLightType;
-
-            lightSceneObject.Light = new Light(
-                lightSceneObject.LightType,
-                new Vector3(lightSceneObject.Light.Position.X, lightSceneObject.Light.Position.Y, lightSceneObject.Light.Position.Z),
-                new Vector3(color.X, color.Y, color.Z)
-            );
+            lightSceneObject.Light = selectedLightType switch
+            {
+                LightType.Point => new PointLight(
+                    new Vector3(
+                        lightSceneObject.GlobalTransform.Position.X,
+                        lightSceneObject.GlobalTransform.Position.Y,
+                        lightSceneObject.GlobalTransform.Position.Z
+                    ),
+                    new Vector3(color.X, color.Y, color.Z)
+                ),
+                LightType.Directional => new DirectionalLight(
+                    new Vector3(
+                        lightSceneObject.GlobalTransform.Position.X,
+                        lightSceneObject.GlobalTransform.Position.Y,
+                        lightSceneObject.GlobalTransform.Position.Z
+                    ),
+                    new Vector3(color.X, color.Y, color.Z)
+                ),
+                _ => throw new NotImplementedException()
+            };
 
             ImGui.TreePop();
         }

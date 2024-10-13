@@ -3,6 +3,12 @@ using System.Runtime.InteropServices;
 
 namespace WeaponZ.Game.Render;
 
+public interface ILight
+{
+    LightType Type { get; }
+    Vector4 Color { get; }
+}
+
 public enum LightType
 {
     Point,
@@ -10,11 +16,23 @@ public enum LightType
 }
 
 [StructLayout(LayoutKind.Sequential)]
-public struct Light(LightType type, Vector3 position, Vector3 color)
+public struct PointLight(Vector3 position, Vector3 color) : ILight
 {
-    public LightType Type = type;
+    public readonly LightType Type => LightType.Point;
+    public Vector4 Color { get; } = new(color, 1.0f);
+
+
     public Vector4 Position = new(position, 1.0f);
-    public Vector4 Color = new(color, 1.0f);
+}
+
+[StructLayout(LayoutKind.Sequential)]
+public struct DirectionalLight(Vector3 direction, Vector3 color) : ILight
+{
+    public readonly LightType Type => LightType.Directional;
+    public Vector4 Color { get; } = new(color, 1.0f);
+
+
+    public Vector4 Direction = new(direction, 1.0f);
 }
 
 [StructLayout(LayoutKind.Sequential)]
@@ -26,7 +44,7 @@ public unsafe struct LightingBuffer
 
     public int LightCount;
 
-    public LightingBuffer(Vector4 cameraPosition, Light[] lights)
+    public LightingBuffer(Vector4 cameraPosition, ILight[] lights)
     {
         CameraPosition = cameraPosition;
         LightCount = Math.Min(lights.Length, 256);
@@ -38,20 +56,40 @@ public unsafe struct LightingBuffer
             {
                 int offset = i * 12;
 
-                // Position (4 floats)
-                pLights[offset] = lights[i].Position.X;
-                pLights[offset + 1] = lights[i].Position.Y;
-                pLights[offset + 2] = lights[i].Position.Z;
-                pLights[offset + 3] = lights[i].Position.W;
+                ILight light = lights[i];
 
-                // Color (4 floats)
-                pLights[offset + 4] = lights[i].Color.X;
-                pLights[offset + 5] = lights[i].Color.Y;
-                pLights[offset + 6] = lights[i].Color.Z;
-                pLights[offset + 7] = lights[i].Color.W;
+                if (light.Type is LightType.Point && light is PointLight p)
+                {
+                    // Position (4 floats)
+                    pLights[offset] = p.Position.X;
+                    pLights[offset + 1] = p.Position.Y;
+                    pLights[offset + 2] = p.Position.Z;
+                    pLights[offset + 3] = p.Position.W;
+
+                    // Color (4 floats)
+                    pLights[offset + 4] = p.Color.X;
+                    pLights[offset + 5] = p.Color.Y;
+                    pLights[offset + 6] = p.Color.Z;
+                    pLights[offset + 7] = p.Color.W;
+                }
+                else if (light.Type is LightType.Directional && light is DirectionalLight d)
+                {
+                    // Position (4 floats)
+                    pLights[offset] = d.Direction.X;
+                    pLights[offset + 1] = d.Direction.Y;
+                    pLights[offset + 2] = d.Direction.Z;
+                    pLights[offset + 3] = d.Direction.W;
+
+                    // Color (4 floats)
+                    pLights[offset + 4] = d.Color.X;
+                    pLights[offset + 5] = d.Color.Y;
+                    pLights[offset + 6] = d.Color.Z;
+                    pLights[offset + 7] = d.Color.W;
+                }
 
                 pLights[offset + 8] = (int)lights[i].Type;
             }
         }
     }
+
 }
