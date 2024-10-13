@@ -224,23 +224,7 @@ public class Program : IInputContext
         {
             if (light is LightSceneObject lso && lso is not null)
             {
-                _renderer.DrawLine(
-                    new Vector3(light.GlobalTransform.Position.X - 0.15f, light.GlobalTransform.Position.Y, light.GlobalTransform.Position.Z),
-                    new Vector3(light.GlobalTransform.Position.X + 0.15f, light.GlobalTransform.Position.Y, light.GlobalTransform.Position.Z),
-                    new Vector3(1.0f, 1.0f, 1.0f)
-                );
-
-                _renderer.DrawLine(
-                    new Vector3(light.GlobalTransform.Position.X, light.GlobalTransform.Position.Y - 0.15f, light.GlobalTransform.Position.Z),
-                    new Vector3(light.GlobalTransform.Position.X, light.GlobalTransform.Position.Y + 0.15f, light.GlobalTransform.Position.Z),
-                    new Vector3(1.0f, 1.0f, 1.0f)
-                );
-
-                _renderer.DrawLine(
-                    new Vector3(light.GlobalTransform.Position.X, light.GlobalTransform.Position.Y, light.GlobalTransform.Position.Z - 0.15f),
-                    new Vector3(light.GlobalTransform.Position.X, light.GlobalTransform.Position.Y, light.GlobalTransform.Position.Z + 0.15f),
-                    new Vector3(1.0f, 1.0f, 1.0f)
-                );
+                DrawDebugLightIndicator(lso);
             }
         }
 
@@ -280,5 +264,71 @@ public class Program : IInputContext
     public bool IsKeyDown(Key key)
     {
         return _keyboardState is not null && _keyboardState.IsKeyDown(key);
+    }
+
+    private void DrawDebugLightIndicator(LightSceneObject light)
+    {
+        if (_renderer is null) return;
+
+        if (light.LightType is LightType.Point)
+        {
+            _renderer.DrawLine(
+                new Vector3(light.GlobalTransform.Position.X - 0.15f, light.GlobalTransform.Position.Y, light.GlobalTransform.Position.Z),
+                new Vector3(light.GlobalTransform.Position.X + 0.15f, light.GlobalTransform.Position.Y, light.GlobalTransform.Position.Z),
+                new Vector3(1.0f, 1.0f, 1.0f)
+            );
+
+            _renderer.DrawLine(
+                new Vector3(light.GlobalTransform.Position.X, light.GlobalTransform.Position.Y - 0.15f, light.GlobalTransform.Position.Z),
+                new Vector3(light.GlobalTransform.Position.X, light.GlobalTransform.Position.Y + 0.15f, light.GlobalTransform.Position.Z),
+                new Vector3(1.0f, 1.0f, 1.0f)
+            );
+
+            _renderer.DrawLine(
+                new Vector3(light.GlobalTransform.Position.X, light.GlobalTransform.Position.Y, light.GlobalTransform.Position.Z - 0.15f),
+                new Vector3(light.GlobalTransform.Position.X, light.GlobalTransform.Position.Y, light.GlobalTransform.Position.Z + 0.15f),
+                new Vector3(1.0f, 1.0f, 1.0f)
+            );
+        }
+        else if (light.LightType is LightType.Directional)
+        {
+            // Going into X
+            _renderer.DrawLine(
+                new Vector3(light.GlobalTransform.Position.X - 0.15f, light.GlobalTransform.Position.Y + 0.15f / 2, light.GlobalTransform.Position.Z),
+                new Vector3(light.GlobalTransform.Position.X + 0.15f, light.GlobalTransform.Position.Y, light.GlobalTransform.Position.Z),
+                new Vector3(1.0f, 1.0f, 1.0f)
+            );
+
+            _renderer.DrawLine(
+                new Vector3(light.GlobalTransform.Position.X - 0.15f, light.GlobalTransform.Position.Y, light.GlobalTransform.Position.Z),
+                new Vector3(light.GlobalTransform.Position.X + 0.15f, light.GlobalTransform.Position.Y - 0.15f / 2, light.GlobalTransform.Position.Z),
+                new Vector3(1.0f, 1.0f, 1.0f)
+            );
+
+            _renderer.DrawLine(
+                new Vector3(light.GlobalTransform.Position.X - 0.15f, light.GlobalTransform.Position.Y - 0.15f / 2, light.GlobalTransform.Position.Z),
+                new Vector3(light.GlobalTransform.Position.X + 0.15f, light.GlobalTransform.Position.Y - 0.15f, light.GlobalTransform.Position.Z),
+                new Vector3(1.0f, 1.0f, 1.0f)
+            );
+
+            // Going into Z
+            _renderer.DrawLine(
+                new Vector3(light.GlobalTransform.Position.X, light.GlobalTransform.Position.Y + 0.15f / 2, light.GlobalTransform.Position.Z - 0.15f),
+                new Vector3(light.GlobalTransform.Position.X, light.GlobalTransform.Position.Y, light.GlobalTransform.Position.Z + 0.15f),
+                new Vector3(1.0f, 1.0f, 1.0f)
+            );
+
+            _renderer.DrawLine(
+                new Vector3(light.GlobalTransform.Position.X, light.GlobalTransform.Position.Y, light.GlobalTransform.Position.Z - 0.15f),
+                new Vector3(light.GlobalTransform.Position.X, light.GlobalTransform.Position.Y - 0.15f / 2, light.GlobalTransform.Position.Z + 0.15f),
+                new Vector3(1.0f, 1.0f, 1.0f)
+            );
+
+            _renderer.DrawLine(
+                new Vector3(light.GlobalTransform.Position.X, light.GlobalTransform.Position.Y - 0.15f / 2, light.GlobalTransform.Position.Z - 0.15f),
+                new Vector3(light.GlobalTransform.Position.X, light.GlobalTransform.Position.Y - 0.15f, light.GlobalTransform.Position.Z + 0.15f),
+                new Vector3(1.0f, 1.0f, 1.0f)
+            );
+        }
     }
 }
