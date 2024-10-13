@@ -199,10 +199,23 @@ public class EditorDebugLayer
         if (ImGui.TreeNode("Light"))
         {
             Vector3 color = new(lightSceneObject.Light.Color.X, lightSceneObject.Light.Color.Y, lightSceneObject.Light.Color.Z);
+            //LightType type = lightSceneObject.Light.Type;
+
             ImGui.ColorEdit3("Color", ref color);
 
+            var types = Enum.GetValues<LightType>();
+            if (ImGui.BeginCombo("Type", types[0].ToString()))
+            {
+                foreach (var type in types)
+                {
+                    ImGui.Selectable(type.ToString());
+                }
+
+                ImGui.EndCombo();
+            }
+
             lightSceneObject.Light = new Light(
-                LightType.Point,
+                lightSceneObject.LightType,
                 new Vector3(lightSceneObject.Light.Position.X, lightSceneObject.Light.Position.Y, lightSceneObject.Light.Position.Z),
                 new Vector3(color.X, color.Y, color.Z)
             );
