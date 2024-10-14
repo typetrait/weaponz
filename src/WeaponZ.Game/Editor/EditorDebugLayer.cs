@@ -216,6 +216,23 @@ public class EditorDebugLayer
                     if (ImGui.Selectable(type.ToString(), isSelected))
                     {
                         selectedLightType = type;
+
+                        lightSceneObject.Light = selectedLightType switch
+                        {
+                            LightType.Point => new PointLight(
+                                new Vector3(
+                                    lightSceneObject.GlobalTransform.Position.X,
+                                    lightSceneObject.GlobalTransform.Position.Y,
+                                    lightSceneObject.GlobalTransform.Position.Z
+                                ),
+                                new Vector3(color.X, color.Y, color.Z)
+                            ),
+                            LightType.Directional => new DirectionalLight(
+                                new Vector3(0.0f, -1.0f, -1.0f),
+                                new Vector3(color.X, color.Y, color.Z)
+                            ),
+                            _ => throw new NotImplementedException()
+                        };
                     }
 
                     if (isSelected)
@@ -227,27 +244,21 @@ public class EditorDebugLayer
                 ImGui.EndCombo();
             }
 
-            lightSceneObject.Light = selectedLightType switch
+            if (selectedLightType == LightType.Directional)
             {
-                LightType.Point => new PointLight(
-                    new Vector3(
-                        lightSceneObject.GlobalTransform.Position.X,
-                        lightSceneObject.GlobalTransform.Position.Y,
-                        lightSceneObject.GlobalTransform.Position.Z
-                    ),
-                    new Vector3(color.X, color.Y, color.Z)
-                ),
-                LightType.Directional => new DirectionalLight(
-                    new Vector3(
-                        lightSceneObject.GlobalTransform.Position.X,
-                        lightSceneObject.GlobalTransform.Position.Y,
-                        lightSceneObject.GlobalTransform.Position.Z
-                    ),
-                    new Vector3(color.X, color.Y, color.Z)
-                ),
-                _ => throw new NotImplementedException()
-            };
+                Vector3 direction = new(
+                    ((DirectionalLight)lightSceneObject.Light).Direction.X,
+                    ((DirectionalLight)lightSceneObject.Light).Direction.Y,
+                    ((DirectionalLight)lightSceneObject.Light).Direction.Z
+                );
+                    
+                ImGui.DragFloat3("", ref direction, 0.02f);
 
+                lightSceneObject.Light = new DirectionalLight(
+                    direction,
+                    new Vector3(color.X, color.Y, color.Z)
+                );
+            };
             ImGui.TreePop();
         }
     }

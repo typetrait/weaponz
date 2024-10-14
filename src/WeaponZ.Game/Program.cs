@@ -290,45 +290,53 @@ public class Program : IInputContext
                 new Vector3(1.0f, 1.0f, 1.0f)
             );
         }
-        else if (light.LightType is LightType.Directional)
+        else if (light.LightType is LightType.Directional && light.Light is DirectionalLight dl)
         {
-            // Going into X
+            Vector3 direction = new Vector3(
+                dl.Direction.X,
+                dl.Direction.Y,
+                dl.Direction.Z
+            );
+
+            Vector3 nDirection = Vector3.Normalize(direction);
+
+            float arrowLength = 0.15f;
+            Vector3 arrowStart = light.GlobalTransform.Position - nDirection * arrowLength;
+            Vector3 arrowEnd = light.GlobalTransform.Position + nDirection * arrowLength;
+
             _renderer.DrawLine(
-                new Vector3(light.GlobalTransform.Position.X - 0.15f, light.GlobalTransform.Position.Y + 0.15f / 2, light.GlobalTransform.Position.Z),
-                new Vector3(light.GlobalTransform.Position.X + 0.15f, light.GlobalTransform.Position.Y, light.GlobalTransform.Position.Z),
+                arrowStart,
+                arrowEnd,
                 new Vector3(1.0f, 1.0f, 1.0f)
             );
 
-            _renderer.DrawLine(
-                new Vector3(light.GlobalTransform.Position.X - 0.15f, light.GlobalTransform.Position.Y, light.GlobalTransform.Position.Z),
-                new Vector3(light.GlobalTransform.Position.X + 0.15f, light.GlobalTransform.Position.Y - 0.15f / 2, light.GlobalTransform.Position.Z),
-                new Vector3(1.0f, 1.0f, 1.0f)
-            );
+            float headLength = 0.1f;
+            float headWidth = 0.02f;
 
-            _renderer.DrawLine(
-                new Vector3(light.GlobalTransform.Position.X - 0.15f, light.GlobalTransform.Position.Y - 0.15f / 2, light.GlobalTransform.Position.Z),
-                new Vector3(light.GlobalTransform.Position.X + 0.15f, light.GlobalTransform.Position.Y - 0.15f, light.GlobalTransform.Position.Z),
-                new Vector3(1.0f, 1.0f, 1.0f)
-            );
+            Vector3 arrowHeadBase = arrowEnd - nDirection * headLength;
 
-            // Going into Z
-            _renderer.DrawLine(
-                new Vector3(light.GlobalTransform.Position.X, light.GlobalTransform.Position.Y + 0.15f / 2, light.GlobalTransform.Position.Z - 0.15f),
-                new Vector3(light.GlobalTransform.Position.X, light.GlobalTransform.Position.Y, light.GlobalTransform.Position.Z + 0.15f),
-                new Vector3(1.0f, 1.0f, 1.0f)
-            );
+            Vector3 perp1 = Vector3.Normalize(Vector3.Cross(nDirection, Vector3.UnitY)) * headWidth;
 
-            _renderer.DrawLine(
-                new Vector3(light.GlobalTransform.Position.X, light.GlobalTransform.Position.Y, light.GlobalTransform.Position.Z - 0.15f),
-                new Vector3(light.GlobalTransform.Position.X, light.GlobalTransform.Position.Y - 0.15f / 2, light.GlobalTransform.Position.Z + 0.15f),
-                new Vector3(1.0f, 1.0f, 1.0f)
-            );
+            if (perp1.Length() < 0.0001f)
+            {
+                perp1 = Vector3.Normalize(Vector3.Cross(nDirection, Vector3.UnitZ)) * headWidth;
+            }
 
-            _renderer.DrawLine(
-                new Vector3(light.GlobalTransform.Position.X, light.GlobalTransform.Position.Y - 0.15f / 2, light.GlobalTransform.Position.Z - 0.15f),
-                new Vector3(light.GlobalTransform.Position.X, light.GlobalTransform.Position.Y - 0.15f, light.GlobalTransform.Position.Z + 0.15f),
-                new Vector3(1.0f, 1.0f, 1.0f)
-            );
+            Vector3 headPoint1 = arrowHeadBase + perp1;
+            Vector3 headPoint2 = arrowHeadBase - perp1;
+
+            _renderer.DrawLine(arrowEnd, headPoint1, new Vector3(1.0f, 1.0f, 1.0f));
+            _renderer.DrawLine(arrowEnd, headPoint2, new Vector3(1.0f, 1.0f, 1.0f));
+            _renderer.DrawLine(headPoint1, headPoint2, new Vector3(1.0f, 1.0f, 1.0f));
+
+            Vector3 perp2 = Vector3.Normalize(Vector3.Cross(nDirection, perp1)) * headWidth;
+
+            Vector3 headPoint3 = arrowHeadBase + perp2;
+            Vector3 headPoint4 = arrowHeadBase - perp2;
+
+            _renderer.DrawLine(arrowEnd, headPoint3, new Vector3(1.0f, 1.0f, 1.0f));
+            _renderer.DrawLine(arrowEnd, headPoint4, new Vector3(1.0f, 1.0f, 1.0f));
+            _renderer.DrawLine(headPoint3, headPoint4, new Vector3(1.0f, 1.0f, 1.0f));
         }
     }
 }
