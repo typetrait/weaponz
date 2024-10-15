@@ -158,7 +158,7 @@ public class Program : IInputContext
         var light1 = new LightSceneObject("Light 1", new Transform() { Position = new Vector3(1.4f, 1.0f, 2.0f) }, new Vector3(1.0f));
         _sceneGraph.AppendTo(_sceneGraph.Root, light1);
 
-        var light2 = new LightSceneObject("Light 2", new Transform() { Position = new Vector3(-2.6f, -3.0f, 1.0f) }, new Vector3(0.2f, 0.1f, 0.5f));
+        var light2 = new LightSceneObject("Light 2", new Transform() { Position = new Vector3(-2.6f, 0.7f, 1.0f) }, new Vector3(0.2f, 0.1f, 0.5f));
         _sceneGraph.AppendTo(_sceneGraph.Root, light2);
 
         _keyboardState.KeyPressed += (s, e) => KeyPressed?.Invoke(s, e);
@@ -292,7 +292,7 @@ public class Program : IInputContext
         }
         else if (light.LightType is LightType.Directional && light.Light is DirectionalLight dl)
         {
-            Vector3 direction = new Vector3(
+            Vector3 direction = new(
                 dl.Direction.X,
                 dl.Direction.Y,
                 dl.Direction.Z
@@ -301,8 +301,8 @@ public class Program : IInputContext
             Vector3 nDirection = Vector3.Normalize(direction);
 
             float arrowLength = 0.15f;
-            Vector3 arrowStart = light.GlobalTransform.Position - nDirection * arrowLength;
-            Vector3 arrowEnd = light.GlobalTransform.Position + nDirection * arrowLength;
+            Vector3 arrowStart = light.GlobalTransform.Position + nDirection * arrowLength;
+            Vector3 arrowEnd = light.GlobalTransform.Position - nDirection * arrowLength;
 
             _renderer.DrawLine(
                 arrowStart,
@@ -313,7 +313,7 @@ public class Program : IInputContext
             float headLength = 0.1f;
             float headWidth = 0.02f;
 
-            Vector3 arrowHeadBase = arrowEnd - nDirection * headLength;
+            Vector3 arrowHeadBase = arrowEnd + nDirection * headLength;
 
             Vector3 perp1 = Vector3.Normalize(Vector3.Cross(nDirection, Vector3.UnitY)) * headWidth;
 
