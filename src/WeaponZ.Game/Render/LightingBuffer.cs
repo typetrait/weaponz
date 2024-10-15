@@ -74,7 +74,7 @@ public unsafe struct LightingBuffer
                 }
                 else if (light.Type is LightType.Directional && light is DirectionalLight d)
                 {
-                    // Position (4 floats)
+                    // Direction (4 floats)
                     pLights[offset] = d.Direction.X;
                     pLights[offset + 1] = d.Direction.Y;
                     pLights[offset + 2] = d.Direction.Z;

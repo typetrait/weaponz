@@ -6,5 +6,5 @@ public static class Config
     public static readonly string AssetsPath = Environment.GetEnvironmentVariable("ASSETS_PATH") ?? ".";
 
     // Game
-    public const uint TargetFps = 60;
+    public const uint TargetFps = 144;
 }

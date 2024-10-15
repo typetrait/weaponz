@@ -49,8 +49,18 @@ void main()
         Light light = lights[i];
 
         vec3 lightColor = light.color.xyz;
+        
+        vec3 lightDirection = vec3(0.0f);
 
-        vec3 lightDirection = normalize(light.position.xyz - fsin_Position.xyz);
+        if (light.type == LightTypePoint)
+        {
+            lightDirection = normalize(light.position.xyz - fsin_Position.xyz);
+        }
+        else if (light.type == LightTypeDirectional)
+        {
+            lightDirection = normalize(light.position.xyz); // position is direction in directional lights
+            lightColor = vec3(1.0f, 0.0f, 0.0f);
+        }
 
         float diffuseIntensity = max(dot(lightDirection, normal), 0.0f);
         vec3 diffuseColor = lightColor * diffuseIntensity;

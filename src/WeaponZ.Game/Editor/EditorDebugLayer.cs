@@ -244,7 +244,15 @@ public class EditorDebugLayer
                 ImGui.EndCombo();
             }
 
-            if (selectedLightType == LightType.Directional)
+            // TODO: Improve this
+            if (selectedLightType == LightType.Point)
+            {
+                lightSceneObject.Light = new PointLight(
+                    lightSceneObject.GlobalTransform.Position,
+                    new Vector3(color.X, color.Y, color.Z)
+                );
+            }
+            else if (selectedLightType == LightType.Directional)
             {
                 Vector3 direction = new(
                     ((DirectionalLight)lightSceneObject.Light).Direction.X,
@@ -258,7 +266,8 @@ public class EditorDebugLayer
                     direction,
                     new Vector3(color.X, color.Y, color.Z)
                 );
-            };
+            }
+
             ImGui.TreePop();
         }
     }
