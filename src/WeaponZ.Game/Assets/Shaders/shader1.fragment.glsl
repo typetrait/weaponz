@@ -59,7 +59,6 @@ void main()
         else if (light.type == LightTypeDirectional)
         {
             lightDirection = normalize(light.position.xyz); // position is direction in directional lights
-            lightColor = vec3(1.0f, 0.0f, 0.0f);
         }
 
         float diffuseIntensity = max(dot(lightDirection, normal), 0.0f);
