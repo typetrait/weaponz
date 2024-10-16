@@ -32,6 +32,10 @@ public class Renderer
 
     private readonly SampleShaders _sampleShaders;
 
+    // Shadow Map
+    private readonly Framebuffer _shadowMapFramebuffer;
+    private readonly Pipeline _shadowMapPipeline;
+
     public Renderer(GraphicsDevice graphicsDevice)
     {
         GraphicsDevice = graphicsDevice;
@@ -113,6 +117,119 @@ public class Renderer
             )
         );
         CreateDebugPipelineAndCommandList();
+
+        // --- Shadow Mapping ---
+
+        //TextureDescription depthTextureDesc = TextureDescription.Texture2D(
+        //    width: 1024,
+        //    height: 1024,
+        //    mipLevels: 0,
+        //    arrayLayers: 0,
+        //    format: PixelFormat.R32_Float,
+        //    usage: TextureUsage.DepthStencil | TextureUsage.Sampled
+        //);
+
+        //Texture depthTexture = GraphicsDevice.ResourceFactory.CreateTexture(depthTextureDesc);
+
+        FramebufferDescription shadowMapFramebufferDesc = new(CreateShadowMapDepthTexture(1024, 1024), []);
+        _shadowMapFramebuffer = GraphicsDevice.ResourceFactory.CreateFramebuffer(
+            shadowMapFramebufferDesc
+        );
+
+        var shadowMapPipelineDesc = new GraphicsPipelineDescription
+        {
+            ShaderSet = shaderSetDescription,
+            ResourceLayouts = [resourceLayout],
+            RasterizerState = rasterizerStateDescription,
+            PrimitiveTopology = PrimitiveTopology.TriangleList,
+            BlendState = BlendStateDescription.SingleOverrideBlend,
+            DepthStencilState = DepthStencilStateDescription.DepthOnlyLessEqual,
+            Outputs = _shadowMapFramebuffer.OutputDescription,
+        };
+
+        _shadowMapPipeline = GraphicsDevice.ResourceFactory.CreateGraphicsPipeline(
+            shadowMapPipelineDesc
+        );
+    }
+
+    public void BeginShadowMapPass(ICamera camera, SceneGraph sceneGraph)
+    {
+        IEnumerable<DirectionalLight> directionalLights = SceneGraph
+            .FindAllByKind(sceneGraph.Root, SceneObjectKind.Light)
+            .Cast<LightSceneObject>()
+            .Select(l => l.Light)
+            .Where(l => l is DirectionalLight)
+            .Cast<DirectionalLight>();
+
+        if (!directionalLights.Any()) return;
+
+        const uint depthFramebufferWidth = 1024;
+        const uint depthFramebufferHeight = 1024;
+
+        //var shadowMapDepthTextures = new Texture[directionalLights.Count()];
+        uint index = 0;
+
+        foreach (DirectionalLight directionalLight in directionalLights)
+        {
+            //shadowMapDepthTextures[index] = CreateShadowMapDepthTexture(
+            //    depthFBWidth,
+            //    depthFBHeight
+            //);
+
+            //var lightCamera = new OrthographicCamera(
+            //    width: depthFBWidth * 0.02f,
+            //    height: depthFBHeight * 0.02f,
+            //    zNear: 1.0f,
+            //    zFar: 7.5f,
+            //    position: new Vector3(
+            //        directionalLight.Direction.X,
+            //        directionalLight.Direction.Y,
+            //        directionalLight.Direction.Z
+            //    ) * -10.0f
+            //);
+            var lightCamera = new OrthographicCamera(
+                width: depthFramebufferWidth,
+                height: depthFramebufferHeight,
+                zNear: -10f,
+                zFar: 10f,
+                position: new Vector3(
+                    directionalLight.Direction.X,
+                    directionalLight.Direction.Y,
+                    directionalLight.Direction.Z
+                )
+            );
+
+            _commandList.Begin();
+            _commandList.SetFramebuffer(_shadowMapFramebuffer);
+            _commandList.ClearDepthStencil(1.0f);
+            _commandList.SetPipeline(_shadowMapPipeline);
+
+            UpdateCameraUniforms(lightCamera);
+
+            DrawSceneGraphNode(sceneGraph.Root);
+
+            index++;
+        }
+    }
+
+    public void EndShadowMapPass()
+    {
+        _commandList.End();
+        GraphicsDevice.SubmitCommands(_commandList);
+    }
+
+    private Texture CreateShadowMapDepthTexture(uint width, uint height)
+    {
+        TextureDescription depthTextureDesc = TextureDescription.Texture2D(
+            width: width,
+            height: height,
+            mipLevels: 1,
+            arrayLayers: 1,
+            format: PixelFormat.R32_Float,
+            usage: TextureUsage.DepthStencil | TextureUsage.Sampled
+        );
+        Texture depthTexture = GraphicsDevice.ResourceFactory.CreateTexture(depthTextureDesc);
+        return depthTexture;
     }
 
     public void BeginFrame(CameraSceneObject activeCamera, SceneGraph sceneGraph)
@@ -123,8 +240,8 @@ public class Renderer
         _commandList.ClearDepthStencil(1.0f);
         _commandList.SetPipeline(Pipeline);
 
-        UpdateCameraUniforms(activeCamera);
-        UpdateLightUniforms(activeCamera, SceneGraph.FindAllByKind(sceneGraph.Root, SceneObjectKind.Light).Cast<LightSceneObject>());
+        UpdateCameraUniforms(activeCamera.Camera);
+        UpdateLightUniforms(activeCamera.Camera, SceneGraph.FindAllByKind(sceneGraph.Root, SceneObjectKind.Light).Cast<LightSceneObject>());
     }
 
     public void EndFrame()
@@ -208,20 +325,20 @@ public class Renderer
         _debugCommandList?.Draw(2);
     }
 
-    private void UpdateCameraUniforms(CameraSceneObject camera)
+    private void UpdateCameraUniforms(ICamera camera)
     {
-        _commandList.UpdateBuffer(_projectionUniformBuffer, 0, camera.Camera.Projection);
-        _commandList.UpdateBuffer(_viewUniformBuffer, 0, camera.Camera.View);
+        _commandList.UpdateBuffer(_projectionUniformBuffer, 0, camera.Projection);
+        _commandList.UpdateBuffer(_viewUniformBuffer, 0, camera.View);
 
         _commandList.SetGraphicsResourceSet(0, ResourceSet);
     }
 
-    private void UpdateLightUniforms(CameraSceneObject activeCamera, IEnumerable<LightSceneObject> lights)
+    private void UpdateLightUniforms(ICamera camera, IEnumerable<LightSceneObject> lights)
     {
         if (lights.Any())
         {
             LightingBuffer lightingBuffer = new(
-                new Vector4(activeCamera.Camera.Position, 1.0f),
+                new Vector4(camera.Position, 1.0f),
                 lights.Select(l => l.Light).ToArray()
             );
 

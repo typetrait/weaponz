@@ -2,7 +2,7 @@
 
 namespace WeaponZ.Game.Render;
 
-public class PerspectiveCamera : ICamera
+public class OrthographicCamera : ICamera
 {
     public float ZNear { get; private set; }
     public float ZFar { get; private set; }
@@ -17,18 +17,18 @@ public class PerspectiveCamera : ICamera
     public Vector3 Forward { get; set; }
     public Vector3 Right { get; set; }
 
-    public PerspectiveCamera(float width, float height, float zNear, float zFar, Vector3 position)
+    public OrthographicCamera(float width, float height, float zNear, float zFar, Vector3 position)
     {
         ZNear = zNear;
         ZFar = zFar;
         Position = position;
 
-        Projection = Matrix4x4.CreatePerspectiveFieldOfView(1.0f, width / height, zNear, zFar);
+        Projection = Matrix4x4.CreateOrthographicOffCenter(-10.0f, 10.0f, -10.0f, 10.0f, zNear, zFar);
 
         Up = Vector3.UnitY;
         Forward = -Vector3.UnitZ;
 
-        View = Matrix4x4.CreateLookAt(position, position + Forward, Up);
+        View = Matrix4x4.CreateLookAt(position, Vector3.Zero, Up);
 
         ViewProjection = new ViewProjectionMatrix(View, Projection);
 
@@ -45,12 +45,4 @@ public class PerspectiveCamera : ICamera
         View = Matrix4x4.CreateLookAt(Position, Position + Forward, Up);
         ViewProjection = new ViewProjectionMatrix(View, Projection);
     }
-}
-
-public struct ViewProjectionMatrix(Matrix4x4 view, Matrix4x4 projection)
-{
-    public Matrix4x4 View = view;
-    public Matrix4x4 Projection = projection;
-
-    public const uint SizeInBytes = 128;
 }

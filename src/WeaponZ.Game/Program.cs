@@ -24,7 +24,7 @@ public class Program : IInputContext
     private ImGuiRenderer? _imGuiRenderer;
 
     // Camera
-    private PerspectiveCamera? _perspectiveCamera;
+    private ICamera? _perspectiveCamera;
     private CameraSceneObject? _mainCamera;
 
     // Input
@@ -99,16 +99,6 @@ public class Program : IInputContext
         // ImGui
         _imGuiRenderer = new ImGuiRenderer(_graphicsDevice, _renderer.PipelineOutput, _window.Width, _window.Height);
 
-        // Camera
-        _perspectiveCamera = new PerspectiveCamera(
-            windowCreateInfo.WindowWidth,
-            windowCreateInfo.WindowHeight,
-            0.1f,
-            100.0f,
-            new Vector3(0.0f, 0.0f, 3.0f)
-        );
-        _mainCamera = new CameraSceneObject("Default Camera", new Transform(), _perspectiveCamera, this);
-
         // Inputs
         _keyboardState = new KeyboardState();
         _mouseState = new MouseState();
@@ -120,6 +110,32 @@ public class Program : IInputContext
         // Scene graph
         var rootNode = new GroupSceneObject("Root");
         _sceneGraph = new SceneGraph(rootNode);
+
+        var sunLight = new LightSceneObject("Sun", new Transform() { Position = Vector3.Zero }, new Vector3(0.2f, 0.1f, 0.5f));
+        _sceneGraph.AppendTo(_sceneGraph.Root, sunLight);
+
+        sunLight.Light = new DirectionalLight(new Vector3(0.0f, 0.0f, 1.0f), new Vector3(1.0f));
+
+        // Camera
+        _perspectiveCamera = new PerspectiveCamera(
+            windowCreateInfo.WindowWidth,
+            windowCreateInfo.WindowHeight,
+            0.1f,
+            100.0f,
+            new Vector3(0.0f, 0.0f, 3.0f)
+        );
+        //_perspectiveCamera = new OrthographicCamera(
+        //    width: 1024/10,
+        //    height: 1024/10,
+        //    zNear: -10f,
+        //    zFar: 10f,
+        //    position: new Vector3(
+        //        ((DirectionalLight)sunLight.Light).Direction.X,
+        //        ((DirectionalLight)sunLight.Light).Direction.Y,
+        //        ((DirectionalLight)sunLight.Light).Direction.Z
+        //    )
+        //);
+        _mainCamera = new CameraSceneObject("Default Camera", new Transform(), _perspectiveCamera, this);
 
         // Models
         var transform = new Transform() { Scale = new Vector3(0.002f) };
@@ -147,7 +163,7 @@ public class Program : IInputContext
         //var sponga = new PawnSceneObject("Sponga", new Transform(), spongaModelBuffer);
 
         _sceneGraph.AppendTo(_sceneGraph.Root, bunnyProp);
-        _sceneGraph.AppendTo(_sceneGraph.Root.Children[0], bunnyProp2);
+        _sceneGraph.AppendTo(_sceneGraph.Root.Children[1], bunnyProp2);
 
         _sceneGraph.AppendTo(_sceneGraph.Root, floor);
 
@@ -203,6 +219,9 @@ public class Program : IInputContext
         {
             throw new InvalidOperationException("Failed to initialize resources.");
         }
+
+        _renderer.BeginShadowMapPass(_mainCamera.Camera, _sceneGraph);
+        _renderer.EndShadowMapPass();
 
         _renderer.BeginFrame(_mainCamera, _sceneGraph);
         _renderer.DrawSceneGraphNode(_sceneGraph.Root);

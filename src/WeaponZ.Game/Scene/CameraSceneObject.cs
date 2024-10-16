@@ -16,7 +16,7 @@ public class CameraSceneObject : ISceneObject
     public SceneObjectKind Kind => SceneObjectKind.Camera;
     public ISceneObject? Parent { get; set; }
     public Transform GlobalTransform { get; set; }
-    public PerspectiveCamera Camera { get; }
+    public ICamera Camera { get; }
 
     public float BaseSpeed { get; set; } = 3.5f;
     public float SpeedModifier { get; set; } = 2.5f;
@@ -43,7 +43,7 @@ public class CameraSceneObject : ISceneObject
     public CameraSceneObject(
         string displayName,
         Transform transform,
-        PerspectiveCamera camera,
+        ICamera camera,
         IInputContext inputContext
     )
     {
