@@ -40,7 +40,7 @@ public unsafe struct LightingBuffer
 {
     public Vector4 CameraPosition;
 
-    public fixed float Lights[256 * 12]; // 256 Lights * (1 type int + 4 Position floats + 4 Color floats)
+    public fixed float Lights[256 * 12]; // 256 Lights * (4 Position floats + 4 Color floats + 1 type float + 3 floats of auto padding)
 
     public int LightCount;
 
@@ -88,8 +88,11 @@ public unsafe struct LightingBuffer
                 }
 
                 pLights[offset + 8] = (int)lights[i].Type;
+
+                pLights[offset + 9] = 0.0f;
+                pLights[offset + 10] = 0.0f;
+                pLights[offset + 11] = 0.0f;
             }
         }
     }
-
 }

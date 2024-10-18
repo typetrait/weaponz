@@ -7,6 +7,7 @@ const int LightTypeDirectional = 1;
 
 layout (location = 0) in vec3 fsin_Normal;
 layout (location = 1) in vec4 fsin_Position;
+layout (location = 2) in vec4 fsin_LightSpacePosition;
 
 layout (location = 0) out vec4 fsout_Color;
 
@@ -25,7 +26,10 @@ struct Light
     float type;
 };
 
-layout (set = 0, binding = 3) uniform LightingBuffer
+layout (set = 0, binding = 4) uniform texture2D ShadowMapTexture;
+layout (set = 0, binding = 5) uniform sampler ShadowMapSampler;
+
+layout (set = 0, binding = 6) uniform LightingBuffer
 {
     vec4 CameraPosition;
     Light lights[MAX_SCENE_LIGHTS];

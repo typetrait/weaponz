@@ -85,14 +85,14 @@ public class Program : IInputContext
         _graphicsDevice = VeldridStartup.CreateGraphicsDevice(_window, graphicsDeviceOptions);
 
         // OpenGL graphics device
-        // _graphicsDevice = VeldridStartup.CreateDefaultOpenGLGraphicsDevice(
-        //     graphicsDeviceOptions,
-        //     window,
-        //     GraphicsBackend.OpenGL
-        // );
+        //_graphicsDevice = VeldridStartup.CreateDefaultOpenGLGraphicsDevice(
+        //    graphicsDeviceOptions,
+        //    _window,
+        //    GraphicsBackend.OpenGL
+        //);
 
         // Vulkan graphics device
-        // _graphicsDevice = VeldridStartup.CreateVulkanGraphicsDevice(graphicsDeviceOptions, window);
+        //_graphicsDevice = VeldridStartup.CreateVulkanGraphicsDevice(graphicsDeviceOptions, _window);
 
         _renderer = new Renderer(_graphicsDevice);
 

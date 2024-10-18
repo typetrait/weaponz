@@ -3,7 +3,6 @@
 using Veldrid;
 
 using WeaponZ.Game.Scene;
-using WeaponZ.Game.Util;
 
 namespace WeaponZ.Game.Render;
 
@@ -22,7 +21,13 @@ public class Renderer
     private readonly DeviceBuffer _projectionUniformBuffer;
     private readonly DeviceBuffer _viewUniformBuffer;
     private readonly DeviceBuffer _modelUniformBuffer;
+    private readonly DeviceBuffer _shadowMapBuffer;
     private readonly DeviceBuffer _lightingUniformBuffer;
+
+    // Textures
+    private readonly Texture _shadowMapTexture;
+    private readonly TextureView _shadowMapTextureView;
+    private readonly Sampler _shadowMapSampler;
 
     // Debug Graphics
     private Pipeline? _debugPipeline;
@@ -36,6 +41,8 @@ public class Renderer
     private readonly Framebuffer _shadowMapFramebuffer;
     private readonly Pipeline _shadowMapPipeline;
 
+    private readonly Dictionary<ILight, ICamera> _lightCameras;
+
     public Renderer(GraphicsDevice graphicsDevice)
     {
         GraphicsDevice = graphicsDevice;
@@ -45,6 +52,9 @@ public class Renderer
             new ResourceLayoutElementDescription("ProjectionBuffer", ResourceKind.UniformBuffer, ShaderStages.Vertex),
             new ResourceLayoutElementDescription("ViewBuffer", ResourceKind.UniformBuffer, ShaderStages.Vertex),
             new ResourceLayoutElementDescription("ModelBuffer", ResourceKind.UniformBuffer, ShaderStages.Vertex),
+            new ResourceLayoutElementDescription("ShadowMapBuffer", ResourceKind.UniformBuffer, ShaderStages.Vertex),
+            new ResourceLayoutElementDescription("ShadowMapTexture", ResourceKind.TextureReadOnly, ShaderStages.Fragment),
+            new ResourceLayoutElementDescription("ShadowMapSampler", ResourceKind.Sampler, ShaderStages.Fragment),
             new ResourceLayoutElementDescription("LightingBuffer", ResourceKind.UniformBuffer, ShaderStages.Fragment)
         );
 
@@ -63,8 +73,28 @@ public class Renderer
             new BufferDescription(64, BufferUsage.UniformBuffer | BufferUsage.Dynamic)
         );
 
+        _shadowMapBuffer = GraphicsDevice.ResourceFactory.CreateBuffer(
+            new BufferDescription(64, BufferUsage.UniformBuffer | BufferUsage.Dynamic)
+        );
+
         _lightingUniformBuffer = GraphicsDevice.ResourceFactory.CreateBuffer(
-            new BufferDescription((uint)MathUtils.CeilingToNearestMultipleOf(12308, 16), BufferUsage.UniformBuffer | BufferUsage.Dynamic)
+            //new BufferDescription((uint)MathUtils.CeilingToNearestMultipleOf(12320, 16), BufferUsage.UniformBuffer | BufferUsage.Dynamic)
+            new BufferDescription(12320, BufferUsage.UniformBuffer | BufferUsage.Dynamic)
+        );
+
+        _shadowMapSampler = GraphicsDevice.ResourceFactory.CreateSampler(
+            new SamplerDescription(
+                SamplerAddressMode.Wrap,
+                SamplerAddressMode.Wrap,
+                SamplerAddressMode.Wrap,
+                SamplerFilter.MinLinear_MagLinear_MipLinear,
+                null,
+                0,
+                1,
+                1,
+                0,
+                SamplerBorderColor.TransparentBlack
+            )
         );
 
         // Vertex layout descriptions
@@ -73,17 +103,6 @@ public class Renderer
         // Shaders
         _sampleShaders = new SampleShaders(GraphicsDevice.ResourceFactory);
         var shaderSetDescription = new ShaderSetDescription([vertexLayoutDescription], _sampleShaders.ShaderGroup1);
-
-        // Resource set
-        ResourceSet = GraphicsDevice.ResourceFactory.CreateResourceSet(
-            new ResourceSetDescription(
-                resourceLayout,
-                _projectionUniformBuffer,
-                _viewUniformBuffer,
-                _modelUniformBuffer,
-                _lightingUniformBuffer
-            )
-        );
 
         // Rasterizer
         var rasterizerStateDescription = new RasterizerStateDescription(
@@ -131,7 +150,15 @@ public class Renderer
 
         //Texture depthTexture = GraphicsDevice.ResourceFactory.CreateTexture(depthTextureDesc);
 
-        FramebufferDescription shadowMapFramebufferDesc = new(CreateShadowMapDepthTexture(1024, 1024), []);
+        _shadowMapTexture = CreateShadowMapDepthTexture(1024, 1024);
+
+        _shadowMapTextureView = GraphicsDevice.ResourceFactory.CreateTextureView(
+            new TextureViewDescription(
+                _shadowMapTexture
+            )
+        );
+
+        FramebufferDescription shadowMapFramebufferDesc = new(_shadowMapTexture, []);
         _shadowMapFramebuffer = GraphicsDevice.ResourceFactory.CreateFramebuffer(
             shadowMapFramebufferDesc
         );
@@ -149,6 +176,22 @@ public class Renderer
 
         _shadowMapPipeline = GraphicsDevice.ResourceFactory.CreateGraphicsPipeline(
             shadowMapPipelineDesc
+        );
+
+        _lightCameras = [];
+
+        // Resource set
+        ResourceSet = GraphicsDevice.ResourceFactory.CreateResourceSet(
+            new ResourceSetDescription(
+                resourceLayout,
+                _projectionUniformBuffer,
+                _viewUniformBuffer,
+                _modelUniformBuffer,
+                _shadowMapBuffer,
+                _shadowMapTextureView,
+                _shadowMapSampler,
+                _lightingUniformBuffer
+            )
         );
     }
 
@@ -199,12 +242,17 @@ public class Renderer
                 )
             );
 
+            _lightCameras[directionalLight] = lightCamera;
+
             _commandList.Begin();
             _commandList.SetFramebuffer(_shadowMapFramebuffer);
             _commandList.ClearDepthStencil(1.0f);
             _commandList.SetPipeline(_shadowMapPipeline);
 
             UpdateCameraUniforms(lightCamera);
+
+            UpdateLightUniforms(camera, SceneGraph.FindAllByKind(sceneGraph.Root, SceneObjectKind.Light).Cast<LightSceneObject>());
+            UpdateShadowMapUniforms(Matrix4x4.Identity);
 
             DrawSceneGraphNode(sceneGraph.Root);
 
@@ -241,7 +289,15 @@ public class Renderer
         _commandList.SetPipeline(Pipeline);
 
         UpdateCameraUniforms(activeCamera.Camera);
-        UpdateLightUniforms(activeCamera.Camera, SceneGraph.FindAllByKind(sceneGraph.Root, SceneObjectKind.Light).Cast<LightSceneObject>());
+        UpdateLightUniforms(
+            activeCamera.Camera,
+            SceneGraph.FindAllByKind(sceneGraph.Root, SceneObjectKind.Light).Cast<LightSceneObject>()
+        );
+
+        ICamera directionalLightCamera = _lightCameras.First().Value;
+        UpdateShadowMapUniforms(
+            directionalLightCamera.View * directionalLightCamera.Projection
+        );
     }
 
     public void EndFrame()
@@ -345,6 +401,12 @@ public class Renderer
             _commandList.UpdateBuffer(_lightingUniformBuffer, 0, lightingBuffer);
             _commandList.SetGraphicsResourceSet(0, ResourceSet);
         }
+    }
+
+    private void UpdateShadowMapUniforms(Matrix4x4 lightSpaceViewProjection)
+    {
+        _commandList.UpdateBuffer(_shadowMapBuffer, 0, lightSpaceViewProjection);
+        _commandList.SetGraphicsResourceSet(0, ResourceSet);
     }
 
     private void CreateDebugPipelineAndCommandList()
